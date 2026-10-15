@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>淡江大學校園互動導覽地圖 - 最新校園處室與地標修正版</title>
+  <title>淡江大學校園互動導覽地圖 - 最新地標與處室校正版</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -130,7 +130,7 @@
         <input 
           type="text" 
           id="filter-keyword" 
-          placeholder="例如：B402、健康中心、註冊組、書卷廣場" 
+          placeholder="例如：B402、健康中心、A212、教務長室" 
           class="w-full pl-8 pr-8 py-1.5 sm:py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all shadow-inner"
         />
         <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
@@ -155,6 +155,7 @@
 
       <!-- 可摺疊收納的進階篩選區塊 -->
       <div id="advanced-filters-panel" class="hidden space-y-2.5 text-xs pt-2.5 mt-1 border-t border-slate-100/80 transition-all">
+        <!-- 篩選列 1: 資料類型 & 景點類別 -->
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block font-bold text-slate-700 mb-1">資料類型</label>
@@ -177,15 +178,16 @@
           </div>
         </div>
 
+        <!-- 篩選列 2: 辦公室學院 / 單位群組 -->
         <div>
           <label class="block font-bold text-slate-700 mb-1">辦公室學院 / 單位群組</label>
           <select id="filter-group" class="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all font-medium">
             <option value="all">全部群組</option>
-            <option value="校務行政幕僚">校務行政幕僚</option>
             <option value="教務處">教務處</option>
             <option value="學務處">學務處</option>
             <option value="總務處">總務處</option>
-            <option value="國際處與國際事務">國際處與國際事務</option>
+            <option value="秘書處/校長室">秘書處/校長室</option>
+            <option value="國際處/國際學院">國際處/國際學院</option>
             <option value="資訊處">資訊處</option>
             <option value="圖書館">圖書館</option>
             <option value="文學院">文學院</option>
@@ -194,10 +196,11 @@
             <option value="工學院">工學院</option>
             <option value="商管學院">商管學院</option>
             <option value="教育學院">教育學院</option>
-            <option value="研究中心與其它">研究中心與其它</option>
+            <option value="其它單位">其它單位</option>
           </select>
         </div>
 
+        <!-- 篩選列 3: 建築物 -->
         <div>
           <label class="block font-bold text-slate-700 mb-1">建築物</label>
           <select id="filter-building" class="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all font-medium">
@@ -205,6 +208,7 @@
           </select>
         </div>
 
+        <!-- 條件重設按鈕 -->
         <div class="pt-1 flex items-center justify-end">
           <button onclick="resetFilters()" class="text-[11px] text-red-600 hover:text-red-700 font-bold flex items-center gap-1 py-1 px-2.5 rounded-lg hover:bg-red-50 transition">
             <i class="fa-solid fa-rotate-left"></i> 重設所有條件
@@ -282,42 +286,42 @@
       }, 3000);
     }
 
-    // 1. 校園地標資料集 (包含全量地標與新增之四個地標)
+    // 1. ★ 校園地標資料集 (校正代號、名稱、簡介與新增 4 地標)
     const campusPlaces = [
-      { id: "A", name: "行政大樓", lat: 25.174879496685257, lng: 121.44905729987109, cat: "admin", color: "#059669", desc: "校長室、副校長室、秘書處、教務處、人資處、研發處辦公室" },
+      { id: "A", name: "行政大樓", lat: 25.174879496685257, lng: 121.44905729987109, cat: "admin", color: "#059669", desc: "學校最高行政決策與主要處室大樓（校長室、教務處、研發處等）" },
       { id: "H", name: "宮燈教室", lat: 25.17448723069087, lng: 121.44939660812109, cat: "academic", color: "#dc2626", desc: "特色中國傳統式瓦舍教室區" },
-      { id: "V", name: "視聽教育館", lat: 25.17499312092134, lng: 121.4494349008392, cat: "academic", color: "#dc2626", desc: "語言教學與多媒體視聽教室" },
+      { id: "V", name: "視聽教育館", lat: 25.17499312092134, lng: 121.4494349008392, cat: "academic", color: "#dc2626", desc: "語言教學與視聽教育發展專屬大樓" },
+      { id: "QP", name: "覺軒會館", lat: 25.173725414003933, lng: 121.4480888307921, cat: "life", color: "#d97706", desc: "QP Terrace，景觀花園餐廳與典雅會館" },
       { id: "TENNIS", name: "網球場", lat: 25.175146690188537, lng: 121.44980790901334, cat: "sport", color: "#16a34a", desc: "校內網球活動場地" },
       { id: "POST", name: "淡江郵局", lat: 25.17464421134901, lng: 121.45027461328878, cat: "life", color: "#16a34a", desc: "淡江校內郵務與儲匯服務" },
       { id: "R", name: "活動中心", lat: 25.17478743024776, lng: 121.45037385501142, cat: "sport", color: "#ea580c", desc: "室內活動場所與羽球場" },
-      { id: "SQUARE", name: "書卷廣場", lat: 25.17553993356438, lng: 121.45063402925842, cat: "life", color: "#8b5cf6", desc: "俗稱的蛋捲廣場" },
-      { id: "I", name: "覺生綜合大樓", lat: 25.174542326030323, lng: 121.45097529475487, cat: "admin", color: "#0284c7", desc: "遠距教學發展中心、品質保證稽核處、覺生國際會議廳" },
-      { id: "U", name: "覺生紀念圖書館", lat: 25.17475101868242, lng: 121.45105513602745, cat: "admin", color: "#0284c7", desc: "總圖書館，採編組、典藏閱覽組、參考服務組與館長室" },
-      { id: "MUSIC", name: "文錙音樂廳", lat: 25.17561479953073, lng: 121.4511518404264, cat: "life", color: "#9333ea", desc: "藝術音樂演出與文化活動展演廳" },
-      { id: "FL", name: "外國語文大樓", lat: 25.17488210027984, lng: 121.45164253975626, cat: "academic", color: "#dc2626", desc: "外語學院院辦、英文系、日文系、歐洲語文學系辦公室" },
-      { id: "AC", name: "文錙藝術中心", lat: 25.17504959322785, lng: 121.45222189698671, cat: "life", color: "#9333ea", desc: "藝術文化展示與書法典藏展覽廳" },
+      { id: "SQUARE", name: "書卷廣場", lat: 25.17553993356438, lng: 121.45063402925842, cat: "life", color: "#8b5cf6", desc: "淡江校園核心地標廣場" },
+      { id: "U", name: "覺生紀念圖書館", lat: 25.17475101868242, lng: 121.45105513602745, cat: "admin", color: "#0284c7", desc: "總圖書館（採編組、典藏閱覽組、參考服務組、館長室）" },
+      { id: "I", name: "覺生綜合大樓", lat: 25.174542326030323, lng: 121.45097529475487, cat: "academic", color: "#0284c7", desc: "遠距教學中心 (I101)、品保處/IR中心 (I801)、覺生國際會議廳 (I1001)" },
+      { id: "FL", name: "外國語文大樓", lat: 25.17488210027984, lng: 121.45164253975626, cat: "academic", color: "#dc2626", desc: "外語學院院辦 (FL410)、英文系 (FL207)、日文系 (FL317)、歐語系 (FL413)" },
+      { id: "AC", name: "文錙藝術中心", lat: 25.17504959322785, lng: 121.45222189698671, cat: "life", color: "#9333ea", desc: "藝術文化展示與書法典藏展覽廳、主任室 (T212)" },
+      { id: "AC_M", name: "文錙音樂廳", lat: 25.17561479953073, lng: 121.4511518404264, cat: "life", color: "#9333ea", desc: "音樂演奏、藝文發表與音樂文化推廣展演空間" },
       { id: "FOOD", name: "美食廣場", lat: 25.17500668977156, lng: 121.4521207165776, cat: "life", color: "#d97706", desc: "校內餐飲與學生用餐生活商場" },
       { id: "Z123", name: "松濤1、2、3館", lat: 25.17501075430506, lng: 121.45261081725785, cat: "life", color: "#e11d48", desc: "學生宿舍區、住宿輔導組（松濤二館二樓大廳 Z200）" },
       { id: "Z45", name: "松濤4、5館", lat: 25.17531418306515, lng: 121.45250621112069, cat: "life", color: "#e11d48", desc: "學生宿舍區" },
-      { id: "T", name: "驚聲紀念大樓", lat: 25.17549138511537, lng: 121.45133140359606, cat: "academic", color: "#dc2626", desc: "國際處、國際事務學院、外英全英語學程、大傳系辦(Q406)" },
-      { id: "E", name: "工學大樓", lat: 25.175972014036386, lng: 121.4518329766833, cat: "academic", color: "#dc2626", desc: "工學院院辦、資工、電機、土木、航太、機械、化材、水資源系辦" },
+      { id: "T", name: "驚聲紀念大樓", lat: 25.17549138511537, lng: 121.45133140359606, cat: "academic", color: "#dc2626", desc: "國際處 (T1002)、外交系全英班 (T802)、國觀系 (T806)、國務學院 (T902)、全政經系 (T1102)" },
+      { id: "E", name: "工學大樓", lat: 25.175972014036386, lng: 121.4518329766833, cat: "academic", color: "#dc2626", desc: "工學院 (E682)、資工 (E646)、電機 (E629)、土木 (E729)、航太 (E788)、機械 (E790)" },
       { id: "G", name: "工學館", lat: 25.176222037416437, lng: 121.45101490302378, cat: "academic", color: "#dc2626", desc: "工程實習工廠、安全辦公室 (G101)、財務處 (G401)" },
       { id: "K", name: "建築館", lat: 25.17610000000000, lng: 121.45150000000000, cat: "academic", color: "#dc2626", desc: "建築學系系辦公室 (K101) 與評圖展演空間" },
       { id: "SWAN", name: "黑天鵝展示廳", lat: 25.176342748545554, lng: 121.45056420144378, cat: "life", color: "#4f46e5", desc: "校園文藝展覽、成果發表與海報特展展廳" },
-      { id: "M", name: "海事博物館", lat: 25.176231747056615, lng: 121.45043018144673, cat: "life", color: "#0891b2", desc: "船型特色博物館、衛生保健組、出版中心 (M109)" },
-      { id: "ED", name: "教育館", lat: 25.17583365135925, lng: 121.45271542347635, cat: "academic", color: "#dc2626", desc: "教育學院院辦、教心所、教設系、教科系、師培中心" },
+      { id: "M", name: "海事博物館", lat: 25.176231747056615, lng: 121.45043018144673, cat: "life", color: "#0891b2", desc: "衛生保健組（健康中心/下層）、出版中心 (M109)" },
+      { id: "ED", name: "教育館", lat: 25.17583365135925, lng: 121.45271542347635, cat: "academic", color: "#dc2626", desc: "教育學院院辦 (ED104)、心諮所 (ED103)、教科系 (ED203)、師培中心 (ED304)" },
       { id: "COURT5", name: "五虎崗球場", lat: 25.17557149006987, lng: 121.45374270944231, cat: "sport", color: "#16a34a", desc: "排球、籃球戶外綜合球場" },
-      { id: "HW", name: "會文館", lat: 25.175714707884946, lng: 121.4495852855837, cat: "academic", color: "#dc2626", desc: "環安中心 (F101)、總務處聯合辦公室 (F103)" },
+      { id: "HW", name: "會文館 / 環安中心", lat: 25.175714707884946, lng: 121.4495852855837, cat: "academic", color: "#dc2626", desc: "環安中心 (F101)、總務處聯合辦公室 (F103)" },
       { id: "L", name: "文學館", lat: 25.176230325112066, lng: 121.44938680218506, cat: "academic", color: "#dc2626", desc: "中文系 (L506)、歷史系 (L524)、資圖系 (L405)" },
-      { id: "B", name: "商館 / 商管大樓", lat: 25.1765822988849, lng: 121.4500734475651, cat: "academic", color: "#dc2626", desc: "學務處各組、商管學院各系辦公室" },
+      { id: "B", name: "商館 / 商管大樓", lat: 25.1765822988849, lng: 121.4500734475651, cat: "academic", color: "#dc2626", desc: "學務處（生輔組/諮商中心）、商管學院各系辦公室（B8~B11）" },
       { id: "BUS27", name: "紅27公車站", lat: 25.176575185036917, lng: 121.44828350788619, cat: "life", color: "#0284c7", desc: "前往淡水捷運站之主要公車發車乘車處" },
       { id: "SG", name: "紹謨紀念體育館", lat: 25.176303147356244, lng: 121.44858482167012, cat: "sport", color: "#16a34a", desc: "室內羽球/籃球場、課外活動輔導組 (SG211)" },
       { id: "BUS28", name: "紅28公車站", lat: 25.174715780941035, lng: 121.44867511038852, cat: "life", color: "#0284c7", desc: "往返淡水捷運站校內公車停靠站點" },
-      { id: "O", name: "傳播館", lat: 25.175609258001995, lng: 121.44901102352833, cat: "academic", color: "#dc2626", desc: "資傳系辦公室 (O304)、傳播學院影音棚" },
+      { id: "O", name: "傳播館", lat: 25.175609258001995, lng: 121.44901102352833, cat: "academic", color: "#dc2626", desc: "資傳系辦公室 (O304)、大傳系辦公室 (Q406/O棟影音棚)" },
       { id: "C", name: "鍾靈化學館", lat: 25.175216949445087, lng: 121.44878854583827, cat: "academic", color: "#dc2626", desc: "化學系辦 (C306)、鍾靈分館 (C301)、科教中心 (C434)、尖端材料學程 (C448)" },
-      { id: "S", name: "騮先紀念科學館", lat: 25.17549126830538, lng: 121.44818655683316, cat: "academic", color: "#dc2626", desc: "理學院院辦 (S220)、物理系辦 (S303)、應數與數據科學系辦 (S401)" },
-      { id: "HC", name: "守謙國際會議中心", lat: 25.17474048214446, lng: 121.44787456316837, cat: "admin", color: "#0284c7", desc: "事務整備組 (HC308)、校友總會會館 (HC301)、AI系辦 (HC303)" },
-      { id: "JUEXUAN", name: "覺軒會館", lat: 25.173725414003933, lng: 121.4480888307921, cat: "life", color: "#d97706", desc: "QP Terrace，景觀花園餐廳" },
+      { id: "S", name: "騮先紀念科學館", lat: 25.17549126830538, lng: 121.44818655683316, cat: "academic", color: "#dc2626", desc: "理學院院辦 (S220)、物理系 (S303)、應數與數據科學系 (S401)" },
+      { id: "HC", name: "守謙國際會議中心", lat: 25.17474048214446, lng: 121.44787456316837, cat: "admin", color: "#0284c7", desc: "校友總會會館 (HC301)、事務整備組 (HC308)、AI系辦 (HC303)" },
       { id: "N", name: "紹謨紀念游泳館", lat: 25.174611747711207, lng: 121.44721264698532, cat: "sport", color: "#16a34a", desc: "標準室內溫水游泳池" },
       { id: "BBALL", name: "籃球場", lat: 25.17380672529315, lng: 121.44683142866, cat: "sport", color: "#16a34a", desc: "戶外籃球運動場" },
       { id: "TRACK", name: "操場", lat: 25.173549254309364, lng: 121.44595519570949, cat: "sport", color: "#16a34a", desc: "標準田徑跑道與運動場" },
@@ -325,66 +329,58 @@
       { id: "JS_SQUARE", name: "驚聲廣場", lat: 25.173818997388533, lng: 121.44742518952371, cat: "life", color: "#8b5cf6", desc: "校園綠意休憩廣場" }
     ];
 
-    // 2. ★ 完整更新之處室資料庫 (含健康中心別名、A棟、T棟、C棟、E棟、ED棟、I棟等房號)
+    // 2. ★ 全面同步更新之處室與系所資料庫
     const campusOffices = [
-      // --- 行政大樓 (A) ---
-      { name: "校長室", group: "校務行政幕僚", building: "行政大樓", room: "A401", targetId: "A" },
-      { name: "副校長室 (學術/行政/國際事務)", group: "校務行政幕僚", building: "行政大樓", room: "A402 / A403", targetId: "A" },
-      { name: "秘書處", group: "校務行政幕僚", building: "行政大樓", room: "A301", targetId: "A" },
-      { name: "人力資源處 (舊稱人事室)", group: "校務行政幕僚", building: "行政大樓", room: "A307", targetId: "A" },
+      // 守謙國際會議中心
+      { name: "事務整備組辦公室", group: "總務處", building: "守謙國際會議中心", room: "HC308", targetId: "HC" },
+      { name: "淡江大學校友總會會館", group: "其它單位", building: "守謙國際會議中心", room: "HC301", targetId: "HC" },
+
+      // 行政大樓 (A)
+      { name: "文書組", group: "總務處", building: "行政大樓", room: "A102", targetId: "A" },
+      { name: "收發室", group: "總務處", building: "行政大樓", room: "A101", targetId: "A" },
+      { name: "職能福利組", group: "其它單位", building: "行政大樓", room: "A103", targetId: "A" },
+      { name: "資訊處 (全校網路/帳號諮詢)", group: "資訊處", building: "行政大樓", room: "A112", targetId: "A" },
       { name: "教務長室", group: "教務處", building: "行政大樓", room: "A201", targetId: "A" },
       { name: "教務處 招生組", group: "教務處", building: "行政大樓", room: "A210", targetId: "A" },
       { name: "教務處 課務組", group: "教務處", building: "行政大樓", room: "A211", targetId: "A" },
       { name: "教務處 註冊組", group: "教務處", building: "行政大樓", room: "A212", targetId: "A" },
-      { name: "資訊處 (全校網路/系統維護/帳號諮詢)", group: "資訊處", building: "行政大樓", room: "A112", targetId: "A" },
-      { name: "研究發展處 (研發處)", group: "研發處", building: "行政大樓", room: "A214", targetId: "A" },
+      { name: "秘書處", group: "秘書處/校長室", building: "行政大樓", room: "A301", targetId: "A" },
+      { name: "人力資源處 (人事室)", group: "其它單位", building: "行政大樓", room: "A307", targetId: "A" },
+      { name: "校長室", group: "秘書處/校長室", building: "行政大樓", room: "A401", targetId: "A" },
+      { name: "副校長室 (學術/行政/國際)", group: "秘書處/校長室", building: "行政大樓", room: "A402 / A403", targetId: "A" },
 
-      // --- 守謙國際會議中心 (HC) ---
-      { name: "淡江大學校友總會會館", group: "研究中心與其它", building: "守謙國際會議中心", room: "HC301", targetId: "HC" },
-      { name: "人工智慧學系 (AI系)", group: "工學院", building: "守謙國際會議中心", room: "HC303", targetId: "HC" },
-      { name: "事務整備組辦公室", group: "總務處", building: "守謙國際會議中心", room: "HC308", targetId: "HC" },
-
-      // --- 會文館 (F / HW) ---
+      // 會文館 / F棟
       { name: "環境保護及安全衛生中心", group: "總務處", building: "會文館", room: "F101", targetId: "HW" },
       { name: "總務處聯合辦公室 (總務長室/節能與空間組/資產組)", group: "總務處", building: "會文館", room: "F103", targetId: "HW" },
 
-      // --- 學務處與健康中心 (B / SG / M / Z) ---
-      { name: "生輔組 (就貸/兵役/獎學金)", group: "學務處", building: "商館", room: "B402", targetId: "B" },
-      { name: "生輔組 (學雜費減免/弱勢助學)", group: "學務處", building: "商館", room: "B421", targetId: "B" },
-      { name: "生輔組 (請假/校安交通)", group: "學務處", building: "商館", room: "B401", targetId: "B" },
-      { name: "學務處 聯合服務櫃台", group: "學務處", building: "商館", room: "B418", targetId: "B" },
-      { name: "課外活動輔導組 (課外組)", group: "學務處", building: "紹謨紀念體育館", room: "SG211", targetId: "SG" },
-      { name: "衛生保健組 (衛保組/健康中心)", group: "學務處", building: "海事博物館下層(靠近福園)", room: "M館下層", targetId: "M" },
-      { name: "住宿輔導組 (住輔組)", group: "學務處", building: "松濤二館", room: "二樓大廳 (Z200)", targetId: "Z123" },
-      { name: "諮商職涯暨學習發展輔導中心", group: "學務處", building: "商館", room: "B402 / I401", targetId: "B" },
-      { name: "原住民族學生資源中心", group: "學務處", building: "商館", room: "B423", targetId: "B" },
+      // 傳播館 (O/Q)
+      { name: "資訊傳播學系 辦公室", group: "文學院", building: "傳播館", room: "O304", targetId: "O" },
+      { name: "大眾傳播學系 辦公室", group: "文學院", building: "傳播館/驚聲大樓", room: "Q406", targetId: "O" },
 
-      // --- 驚聲紀念大樓 (T / Q) ---
-      { name: "大眾傳播學系 辦公室", group: "文學院", building: "驚聲紀念大樓", room: "Q406", targetId: "T" },
+      // 驚聲紀念大樓 (T)
       { name: "資訊處 校務資訊組", group: "資訊處", building: "驚聲紀念大樓", room: "T107", targetId: "T" },
       { name: "資訊處 網路管理組", group: "資訊處", building: "驚聲紀念大樓", room: "T109", targetId: "T" },
-      { name: "文錙藝術中心 主任室", group: "研究中心與其它", building: "驚聲紀念大樓", room: "T212", targetId: "T" },
-      { name: "驚聲國際會議廳", group: "國際處與國際事務", building: "驚聲紀念大樓", room: "T301", targetId: "T" },
-      { name: "外交與國際關係學系全英語學士班 辦公室", group: "國際處與國際事務", building: "驚聲紀念大樓", room: "T802", targetId: "T" },
-      { name: "國際觀光管理學系全英語學士班 辦公室", group: "國際處與國際事務", building: "驚聲紀念大樓", room: "T806", targetId: "T" },
-      { name: "歐洲聯盟研究中心 / 兩岸關係研究中心", group: "研究中心與其它", building: "驚聲紀念大樓", room: "T811", targetId: "T" },
-      { name: "國際事務學院 院辦公室", group: "國際處與國際事務", building: "驚聲紀念大樓", room: "T902", targetId: "T" },
-      { name: "國際事務副校長室", group: "校務行政幕僚", building: "驚聲紀念大樓", room: "T1001", targetId: "T" },
-      { name: "國際暨兩岸事務處 (國際交流組/境外生輔導組)", group: "國際處與國際事務", building: "驚聲紀念大樓", room: "T1002", targetId: "T" },
-      { name: "全球政治經濟學系 辦公室", group: "國際處與國際事務", building: "驚聲紀念大樓", room: "T1102", targetId: "T" },
+      { name: "文錙藝術中心 主任室", group: "其它單位", building: "驚聲紀念大樓", room: "T212", targetId: "T" },
+      { name: "驚聲國際會議廳", group: "其它單位", building: "驚聲紀念大樓", room: "T301", targetId: "T" },
+      { name: "外交與國際關係學系全英語學士班", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T802", targetId: "T" },
+      { name: "國際觀光管理學系全英語學士班", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T806", targetId: "T" },
+      { name: "歐洲聯盟研究中心 / 兩岸關係研究中心", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T811", targetId: "T" },
+      { name: "國際事務學院 院辦公室", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T902", targetId: "T" },
+      { name: "國際事務副校長室", group: "秘書處/校長室", building: "驚聲紀念大樓", room: "T1001", targetId: "T" },
+      { name: "國際暨兩岸事務處 (國際交流組/境外生輔導組)", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T1002", targetId: "T" },
+      { name: "全球政治經濟學系 辦公室", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T1102", targetId: "T" },
       { name: "全英語教學推動中心", group: "教務處", building: "驚聲紀念大樓", room: "T1103", targetId: "T" },
-      { name: "日本研究中心 / 東協研究中心", group: "研究中心與其它", building: "驚聲紀念大樓", room: "T1106", targetId: "T" },
-      { name: "國際事務與戰略研究所 辦公室", group: "國際處與國際事務", building: "驚聲紀念大樓", room: "T1202", targetId: "T" },
+      { name: "日本研究中心 / 東協研究中心", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T1106", targetId: "T" },
+      { name: "國際事務與戰略研究所", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T1202", targetId: "T" },
 
-      // --- 鍾靈化學館 (C) ---
+      // 鍾靈化學館 (C)
       { name: "化學學系 辦公室", group: "理學院", building: "鍾靈化學館", room: "C306", targetId: "C" },
-      { name: "鍾靈分館 (理學分館) 圖書館", group: "圖書館", building: "鍾靈化學館", room: "C301", targetId: "C" },
+      { name: "鍾靈分館 (理學分館圖書館)", group: "圖書館", building: "鍾靈化學館", room: "C301", targetId: "C" },
       { name: "科學教育中心 辦公室", group: "理學院", building: "鍾靈化學館", room: "C434", targetId: "C" },
-      { name: "尖端材料科學學士學位學程 辦公室", group: "理學院", building: "鍾靈化學館", room: "C448", targetId: "C" },
+      { name: "尖端材料科學學士學位學程", group: "理學院", building: "鍾靈化學館", room: "C448", targetId: "C" },
 
-      // --- 工學大樓與工學館 (E / G) ---
+      // 工學大樓 (E) / 工學館 (G)
       { name: "工學院 院長室 / 技正辦公室", group: "工學院", building: "工學大樓", room: "E682", targetId: "E" },
-      { name: "AI 創智學院院長室與行政核心辦公室", group: "工學院", building: "工學大樓", room: "E682", targetId: "E" },
       { name: "資訊工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E646", targetId: "E" },
       { name: "電機工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E629", targetId: "E" },
       { name: "土木工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E729", targetId: "E" },
@@ -392,64 +388,65 @@
       { name: "機械與機電工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E790", targetId: "E" },
       { name: "化學工程與材料工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E610", targetId: "E" },
       { name: "水資源及環境工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E718", targetId: "E" },
+      { name: "AI 創智學院院長室", group: "工學院", building: "工學大樓", room: "E682", targetId: "E" },
+      { name: "人工智慧學系 (AI系)", group: "工學院", building: "守謙國際會議中心", room: "HC303", targetId: "HC" },
       { name: "安全辦公室", group: "總務處", building: "工學館", room: "G101", targetId: "G" },
-      { name: "財務處", group: "研究中心與其它", building: "工學館", room: "G401", targetId: "G" },
+      { name: "財務處", group: "其它單位", building: "工學館", room: "G401", targetId: "G" },
 
-      // --- 教育館 (ED) ---
-      { name: "教育心理與諮商研究所 辦公室", group: "教育學院", building: "教育館", room: "ED103", targetId: "ED" },
+      // 教育館 (ED)
+      { name: "教育心理與諮商研究所", group: "教育學院", building: "教育館", room: "ED103", targetId: "ED" },
       { name: "教育學院 院辦公室", group: "教育學院", building: "教育館", room: "ED104 / ED105", targetId: "ED" },
-      { name: "教育與未來設計學系 辦公室", group: "教育學院", building: "教育館", room: "ED106", targetId: "ED" },
+      { name: "教育與未來設計學系", group: "教育學院", building: "教育館", room: "ED106", targetId: "ED" },
       { name: "教育科技學系 辦公室", group: "教育學院", building: "教育館", room: "ED203", targetId: "ED" },
       { name: "師資培育中心 辦公室", group: "教育學院", building: "教育館", room: "ED304", targetId: "ED" },
-      { name: "策略遠見研究中心", group: "研究中心與其它", building: "教育館", room: "ED305", targetId: "ED" },
+      { name: "策略遠見研究中心", group: "教育學院", building: "教育館", room: "ED305", targetId: "ED" },
 
-      // --- 外國語文大樓 (FL) ---
+      // 外國語文大樓 (FL)
       { name: "英文學系 辦公室", group: "外語學院", building: "外國語文大樓", room: "FL207", targetId: "FL" },
       { name: "教學卓越計畫辦公室", group: "教務處", building: "外國語文大樓", room: "FL216", targetId: "FL" },
       { name: "日本語文學系 辦公室", group: "外語學院", building: "外國語文大樓", room: "FL317", targetId: "FL" },
       { name: "外國語文學院 院辦公室", group: "外語學院", building: "外國語文大樓", room: "FL410", targetId: "FL" },
-      { name: "歐洲語文學系 辦公室 (西文組/法文組/德文組/俄文組)", group: "外語學院", building: "外國語文大樓", room: "FL413", targetId: "FL" },
+      { name: "歐洲語文學系 (西文組/法文組/德文組/俄文組)", group: "外語學院", building: "外國語文大樓", room: "FL413", targetId: "FL" },
 
-      // --- 覺生紀念圖書館 (U) ---
+      // 覺生紀念圖書館 (U) & 覺生綜合大樓 (I)
       { name: "採編組 辦公室", group: "圖書館", building: "覺生紀念圖書館", room: "U101", targetId: "U" },
       { name: "典藏閱覽組", group: "圖書館", building: "覺生紀念圖書館", room: "U201", targetId: "U" },
       { name: "數位資訊組 辦公室", group: "圖書館", building: "覺生紀念圖書館", room: "U202", targetId: "U" },
       { name: "參考服務組 (參考諮詢櫃台)", group: "圖書館", building: "覺生紀念圖書館", room: "U301", targetId: "U" },
-      { name: "多媒體資源室 / 非書資料組 辦公室", group: "圖書館", building: "覺生紀念圖書館", room: "U501", targetId: "U" },
+      { name: "多媒體資源室 / 非書資料組", group: "圖書館", building: "覺生紀念圖書館", room: "U501", targetId: "U" },
       { name: "館長室", group: "圖書館", building: "覺生紀念圖書館", room: "U801", targetId: "U" },
       { name: "圖書館 秘書辦公室", group: "圖書館", building: "覺生紀念圖書館", room: "U802", targetId: "U" },
+      { name: "遠距教學發展中心 (iClass/數位教材)", group: "教務處", building: "覺生綜合大樓", room: "I101", targetId: "I" },
+      { name: "品質保證稽核處 及 校務研究中心", group: "其它單位", building: "覺生綜合大樓", room: "I801", targetId: "I" },
+      { name: "覺生國際會議廳", group: "其它單位", building: "覺生綜合大樓", room: "I1001", targetId: "I" },
 
-      // --- 覺生綜合大樓 (I) ---
-      { name: "遠距教學發展中心 辦公室 (iClass平台/數位教材)", group: "教務處", building: "覺生綜合大樓", room: "I101", targetId: "I" },
-      { name: "品質保證稽核處 及 校務研究中心", group: "校務行政幕僚", building: "覺生綜合大樓", room: "I801", targetId: "I" },
-      { name: "覺生國際會議廳", group: "教務處", building: "覺生綜合大樓", room: "I1001", targetId: "I" },
-
-      // --- 騮先紀念科學館 (S) ---
+      // 騮先紀念科學館 (S) / 鍾靈化學館 (C) / 出版中心 (M)
       { name: "理學院 院辦公室", group: "理學院", building: "騮先紀念科學館", room: "S220", targetId: "S" },
       { name: "物理學系 辦公室", group: "理學院", building: "騮先紀念科學館", room: "S303", targetId: "S" },
-      { name: "應用數學與數據科學學系 辦公室", group: "理學院", building: "騮先紀念科學館", room: "S401", targetId: "S" },
+      { name: "應用數學與數據科學學系", group: "理學院", building: "騮先紀念科學館", room: "S401", targetId: "S" },
+      { name: "出版中心 辦公室", group: "其它單位", building: "海事博物館", room: "M109", targetId: "M" },
 
-      // --- 文學館 (L / O / M / K) ---
-      { name: "中國文學學系 (中文系)", group: "文學院", building: "文學館", room: "L506", targetId: "L" },
-      { name: "歷史學系 (歷史系)", group: "文學院", building: "文學館", room: "L524", targetId: "L" },
-      { name: "資訊與圖書館學系 (資圖系)", group: "文學院", building: "文學館", room: "L405", targetId: "L" },
-      { name: "資訊傳播學系 辦公室", group: "文學院", building: "傳播館", room: "O304", targetId: "O" },
-      { name: "出版中心 辦公室", group: "研究中心與其它", building: "海事博物館", room: "M109", targetId: "M" },
-      { name: "建築學系 (建築系)", group: "工學院", building: "建築館", room: "K101", targetId: "K" },
-
-      // --- 商管學院 (B) ---
-      { name: "總務處 出納組", group: "總務處", building: "商館", room: "B304", targetId: "B" },
-      { name: "公共行政學系 (公行系)", group: "商管學院", building: "商館", room: "B811", targetId: "B" },
-      { name: "企業管理學系 (企管系)", group: "商管學院", building: "商館", room: "B912", targetId: "B" },
-      { name: "資訊管理學系 (資管系)", group: "商管學院", building: "商館", room: "B927", targetId: "B" },
+      // 學務處 & 商管學院 (B)
+      { name: "生輔組 (就貸/兵役/獎學金)", group: "學務處", building: "商館", room: "B402", targetId: "B" },
+      { name: "生輔組 (學雜費減免/弱勢助學)", group: "學務處", building: "商館", room: "B421", targetId: "B" },
+      { name: "生輔組 (請假/校安交通)", group: "學務處", building: "商館", room: "B401", targetId: "B" },
+      { name: "學務處 聯合服務櫃台", group: "學務處", building: "商館", room: "B418", targetId: "B" },
+      { name: "課外活動輔導組 (課外組)", group: "學務處", building: "紹謨紀念體育館", room: "SG211", targetId: "SG" },
+      { name: "衛生保健組 (衛保組/健康中心)", group: "學務處", building: "海事博物館下層", room: "M館下層", targetId: "M" },
+      { name: "住宿輔導組 (住輔組)", group: "學務處", building: "松濤館二館", room: "二樓大廳 (Z200)", targetId: "Z123" },
+      { name: "諮商職涯暨學習發展輔導中心", group: "學務處", building: "商館", room: "B402 / I401", targetId: "B" },
+      { name: "原住民族學生資源中心", group: "學務處", building: "商館", room: "B423", targetId: "B" },
       { name: "商管學院辦公室 (院辦)", group: "商管學院", building: "商館", room: "B1001", targetId: "B" },
-      { name: "會計學系 (會計系)", group: "商管學院", building: "商館", room: "B1003", targetId: "B" },
       { name: "國際企業學系 (國企系)", group: "商管學院", building: "商館", room: "B1012", targetId: "B" },
-      { name: "管理科學學系 (管科學系)", group: "商管學院", building: "商館", room: "B1014", targetId: "B" },
-      { name: "財務金融學系 (財金系/金管系)", group: "商管學院", building: "商館", room: "B1102 / B1104", targetId: "B" },
-      { name: "風險管理與保險學系 (保險系)", group: "商管學院", building: "商館", room: "B1107", targetId: "B" },
-      { name: "經濟學系 (經濟系)", group: "商管學院", building: "商館", room: "B1109", targetId: "B" },
+      { name: "財務金融學系 (金管系/財金系)", group: "商管學院", building: "商館", room: "B1104 / B1102", targetId: "B" },
+      { name: "會計學系 (會計系)", group: "商管學院", building: "商館", room: "B1003", targetId: "B" },
       { name: "產業經濟學系 (產經系)", group: "商管學院", building: "商館", room: "B1111", targetId: "B" },
+      { name: "經濟學系 (經濟系)", group: "商管學院", building: "商館", room: "B1109", targetId: "B" },
+      { name: "企業管理學系 (企管系)", group: "商管學院", building: "商館", room: "B912", targetId: "B" },
+      { name: "風險管理與保險學系 (保險系)", group: "商管學院", building: "商館", room: "B1107", targetId: "B" },
+      { name: "資訊管理學系 (資管系)", group: "商管學院", building: "商館", room: "B927", targetId: "B" },
+      { name: "公共行政學系 (公行系)", group: "商管學院", building: "商館", room: "B811", targetId: "B" },
+      { name: "管理科學學系 (管科學系)", group: "商管學院", building: "商館", room: "B1014", targetId: "B" },
       { name: "統計學系 (統計系)", group: "商管學院", building: "商館", room: "B1113", targetId: "B" }
     ];
 
@@ -503,9 +500,9 @@
         badgeHeight = 34;
         fontSize = '12px';
       } else if (codeLen >= 3) {
-        badgeWidth = 46;
-        badgeHeight = 28;
-        fontSize = '9px';
+        badgeWidth = 44;
+        badgeHeight = 30;
+        fontSize = '10px';
       }
 
       return L.divIcon({
@@ -597,7 +594,6 @@
     }
     initMarkers();
 
-    // 動態填入建築下拉選單
     function populateBuildingSelect() {
       const select = document.getElementById('filter-building');
       campusPlaces.forEach(p => {
@@ -659,7 +655,7 @@
         activeIndicator.classList.add('hidden');
       }
 
-      // 1. 篩選處室 (支援「健康中心」等別名搜尋)
+      // 1. 篩選處室 (支援健康中心搜尋衛保組)
       let matchedOffices = campusOffices.filter(o => {
         if (dataType === 'place') return false;
         if (group !== 'all' && o.group !== group) return false;
@@ -669,7 +665,7 @@
                           o.room.toLowerCase().includes(kw) || 
                           o.group.toLowerCase().includes(kw) || 
                           o.building.toLowerCase().includes(kw) ||
-                          (kw.includes("健康") && o.name.includes("衛保"));
+                          (kw.includes('健康中心') && o.name.includes('衛生保健'));
           if (!matchKw) return false;
         }
         return true;
@@ -689,7 +685,6 @@
         return true;
       });
 
-      // 地圖標記連動顯示
       const activePlaceIds = new Set([
         ...matchedPlaces.map(p => p.id),
         ...matchedOffices.map(o => o.targetId)
@@ -724,7 +719,7 @@
       filterStats.innerText = `符合：${totalCount} 項`;
 
       if (totalCount === 0) {
-        resultsContainer.innerHTML = `<div class="p-3 text-center text-xs text-slate-400">找不到相符的項目，請嘗試簡化搜尋關鍵字</div>`;
+        resultsContainer.innerHTML = `<div class="p-3 text-center text-xs text-slate-400">找不到相符的項目，請嘗試放寬條件</div>`;
         return;
       }
 
@@ -789,7 +784,6 @@
       }
     }
 
-    // 監聽所有篩選變更
     [keywordInput, dataTypeSelect, placeCatSelect, groupSelect, buildingSelect].forEach(elem => {
       elem.addEventListener('input', applyFilters);
       elem.addEventListener('change', applyFilters);
@@ -810,7 +804,6 @@
       showToast("已重設所有搜尋與篩選條件", "fa-rotate-left", "text-blue-400");
     }
 
-    // 地圖拖曳自動收起進階選單
     map.on('dragstart', () => {
       if (!advPanel.classList.contains('hidden')) {
         advPanel.classList.add('hidden');
