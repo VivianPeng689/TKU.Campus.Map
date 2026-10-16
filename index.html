@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>淡江大學校園互動導覽地圖 - 平滑三角箭頭指示版</title>
+  <title>淡江大學校園互動導覽地圖 - 超穩定羅盤指示版</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -70,7 +70,7 @@
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
     }
 
-    /* GPS 脈衝動態光圈與平滑三角箭頭 */
+    /* GPS 脈衝動態光圈與超穩定平滑三角箭頭 */
     .user-heading-container {
       position: relative;
       width: 48px;
@@ -90,11 +90,11 @@
       border-right: 8px solid transparent;
       border-bottom: 18px solid #2563eb; /* 實心藍色箭頭 */
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
-      transform-origin: 50% 100%; /* 正確旋轉軸心點 */
-      transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1.0); /* 平滑旋轉動畫 */
+      transform-origin: 50% 100%; /* 旋轉軸心點置於箭頭底邊中央 */
+      transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1.0); /* 穩定過渡動畫 */
       pointer-events: none;
       display: none;
-      z-index: 2;
+      z-index: 3;
     }
 
     .user-pulse-marker {
@@ -813,16 +813,17 @@
       }
     });
 
-    // 6. ★ 自動 GPS 即時定位與平滑羅盤三角箭頭 (Low-pass Filtered Compass Arrow)
+    // 6. ★ 超穩定平滑羅盤演算法（Low-pass Filter + Deadband Threshold）
     let userMarker = null;
     let userAccuracyCircle = null;
     let userLatLng = null;
     let hasCenteredFirstTime = false;
     let watchId = null;
 
-    // 平滑濾波變數
-    let lastHeading = null;
-    const filterAlpha = 0.2; // 低通濾波過渡係數（值越小越平滑，可消除手晃抖動）
+    // 羅盤平滑與死區控制變數
+    let currentSmoothedHeading = null;
+    const filterAlpha = 0.12;      // 低通濾波過渡係數（0.12 表示極度穩定沉穩）
+    const deadbandThreshold = 2.5;  // 死區門檻（微小抖動 < 2.5° 時不更新，消除手震）
 
     function startAutoLocationTracking() {
       const statusBadge = document.getElementById('gps-status-badge');
@@ -844,7 +845,6 @@
           userLatLng = [lat, lng];
 
           if (!userMarker) {
-            // 建立含三角箭頭的 DOM Icon
             const userCustomIcon = L.divIcon({
               className: '',
               html: `
@@ -901,7 +901,7 @@
       );
     }
 
-    // 裝置羅盤 orientations 與低通濾波計算
+    // 羅盤 Event 數據平滑化計算
     function initDeviceOrientation() {
       const handleOrientation = (e) => {
         let rawHeading = null;
@@ -913,24 +913,22 @@
         }
 
         if (rawHeading !== null) {
-          // 平滑化處理 (Smoothed Heading calculation)
-          if (lastHeading === null) {
-            lastHeading = rawHeading;
+          if (currentSmoothedHeading === null) {
+            currentSmoothedHeading = rawHeading;
           } else {
-            // 處理跨越 0°/360° 的角度不連續性問題
-            let diff = rawHeading - lastHeading;
-            if (diff > 180) diff -= 360;
-            if (diff < -180) diff += 360;
+            // 計算最小環形角度差 (Angle delta with wrap-around)
+            let delta = rawHeading - currentSmoothedHeading;
+            if (delta > 180) delta -= 360;
+            if (delta < -180) delta += 360;
 
-            // 若微幅抖動小於 1 度則忽視，避免無謂震盪
-            if (Math.abs(diff) > 1.0) {
-              lastHeading = lastHeading + filterAlpha * diff;
-              // 規範數值至 [0, 360) 區間
-              lastHeading = (lastHeading + 360) % 360;
+            // 死區判定：若微幅跳動小於門檻 (2.5度)，直接忽視手震
+            if (Math.abs(delta) >= deadbandThreshold) {
+              currentSmoothedHeading = currentSmoothedHeading + filterAlpha * delta;
+              currentSmoothedHeading = (currentSmoothedHeading + 360) % 360;
             }
           }
 
-          updateArrowRotation(lastHeading);
+          updateArrowRotation(currentSmoothedHeading);
         }
       };
 
@@ -951,7 +949,7 @@
       }
     }
 
-    // 即時平滑旋轉三角箭頭
+    // 順暢更新 CSS 旋轉角度
     function updateArrowRotation(deg) {
       const arrowElem = document.getElementById('user-heading-arrow');
       if (arrowElem) {
