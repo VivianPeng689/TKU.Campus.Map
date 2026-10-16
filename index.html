@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>淡江大學校園互動導覽地圖 - 平滑三角箭頭指示版</title>
+  <title>淡江大學校園互動導覽地圖 - 平滑漸層光束版</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -70,33 +70,36 @@
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
     }
 
-    /* GPS 脈衝動態光圈與平滑三角箭頭 */
+    /* GPS 定位點與 Google Maps 風格藍色漸層扇形光束 */
     .user-heading-container {
       position: relative;
-      width: 48px;
-      height: 48px;
+      width: 64px;
+      height: 64px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    /* 精確正三角箭頭指示器 */
-    .user-heading-arrow {
+    /* Google Maps 半透明藍色漸層扇形光束 (置於底層 z-index: 1) */
+    .user-heading-beam {
       position: absolute;
-      top: 4px;
+      top: -6px;
       width: 0;
       height: 0;
-      border-left: 8px solid transparent;
-      border-right: 8px solid transparent;
-      border-bottom: 18px solid #2563eb; /* 實心藍色箭頭 */
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
-      transform-origin: 50% 100%; /* 正確旋轉軸心點 */
-      transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1.0); /* 平滑旋轉動畫 */
+      border-left: 22px solid transparent;
+      border-right: 22px solid transparent;
+      border-top: 44px solid transparent;
+      /* CSS Mask 建立柔和漸層扇形光束 */
+      background: linear-gradient(180deg, rgba(37, 99, 235, 0.55) 0%, rgba(37, 99, 235, 0.05) 90%);
+      clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+      transform-origin: 50% 100%;
+      transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1.0);
       pointer-events: none;
       display: none;
-      z-index: 3;
+      z-index: 1; /* 底層：不遮擋定位中心圓點 */
     }
 
+    /* 中心藍色定位圓點 (頂層 z-index: 10) */
     .user-pulse-marker {
       position: relative;
       width: 16px;
@@ -104,8 +107,8 @@
       background: #2563eb;
       border: 3px solid #ffffff;
       border-radius: 50%;
-      box-shadow: 0 0 10px rgba(37,99,235,0.8);
-      z-index: 2;
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.8);
+      z-index: 10; /* 最高層級：永遠顯示在光束上方 */
     }
     .user-pulse-marker::after {
       content: '';
@@ -117,6 +120,7 @@
       background-color: rgba(37, 99, 235, 0.35);
       border-radius: 50%;
       animation: pulse-ring 2s infinite ease-out;
+      z-index: 9;
     }
     @keyframes pulse-ring {
       0% { transform: scale(0.6); opacity: 1; }
@@ -813,16 +817,17 @@
       }
     });
 
-    // 6. ★ 自動 GPS 即時定位與平滑羅盤三角箭頭 (Low-pass Filtered Compass Arrow)
+    // 6. ★ 低通濾波平滑羅盤與正確 Z-Index 圖層 (Smooth Low-pass Compass Beam)
     let userMarker = null;
     let userAccuracyCircle = null;
     let userLatLng = null;
     let hasCenteredFirstTime = false;
     let watchId = null;
 
-    // 平滑濾波變數
-    let lastHeading = null;
-    const filterAlpha = 0.2; // 低通濾波過渡係數（值越小越平滑，可消除手晃抖動）
+    // 低通濾波過濾變數
+    let filteredHeading = null;
+    const filterAlpha = 0.15; // 平滑指數（值越小越平滑，徹底過濾抖動）
+    const minThresholdDeg = 3.0; // 最小角度更新門檻（3 度以下震盪無視）
 
     function startAutoLocationTracking() {
       const statusBadge = document.getElementById('gps-status-badge');
@@ -844,17 +849,17 @@
           userLatLng = [lat, lng];
 
           if (!userMarker) {
-            // 建立含三角箭頭的 DOM Icon
+            // 正確圖層架構：光束 (z-index:1) 於底層，藍色脈衝點 (z-index:10) 於頂層
             const userCustomIcon = L.divIcon({
               className: '',
               html: `
                 <div class="user-heading-container">
-                  <div id="user-heading-arrow" class="user-heading-arrow"></div>
+                  <div id="user-heading-beam" class="user-heading-beam"></div>
                   <div class="user-pulse-marker"></div>
                 </div>
               `,
-              iconSize: [48, 48],
-              iconAnchor: [24, 24]
+              iconSize: [64, 64],
+              iconAnchor: [32, 32]
             });
 
             userMarker = L.marker(userLatLng, { icon: userCustomIcon, zIndexOffset: 1000 }).addTo(map);
@@ -901,7 +906,7 @@
       );
     }
 
-    // 裝置羅盤 orientations 與低通濾波計算
+    // 裝置羅盤（DeviceOrientation）平滑濾波演算法
     function initDeviceOrientation() {
       const handleOrientation = (e) => {
         let rawHeading = null;
@@ -913,24 +918,23 @@
         }
 
         if (rawHeading !== null) {
-          // 平滑化處理 (Smoothed Heading calculation)
-          if (lastHeading === null) {
-            lastHeading = rawHeading;
+          // 首次傳回數據初始化
+          if (filteredHeading === null) {
+            filteredHeading = rawHeading;
           } else {
-            // 處理跨越 0°/360° 的角度不連續性問題
-            let diff = rawHeading - lastHeading;
+            // 正確處理 0° / 360° 邊界差值
+            let diff = rawHeading - filteredHeading;
             if (diff > 180) diff -= 360;
             if (diff < -180) diff += 360;
 
-            // 若微幅抖動小於 1 度則忽視，避免無謂震盪
-            if (Math.abs(diff) > 1.0) {
-              lastHeading = lastHeading + filterAlpha * diff;
-              // 規範數值至 [0, 360) 區間
-              lastHeading = (lastHeading + 360) % 360;
+            // 門檻過濾：當變動幅度大於 3 度時才計算平滑值，避免手晃抖動
+            if (Math.abs(diff) >= minThresholdDeg) {
+              filteredHeading = filteredHeading + filterAlpha * diff;
+              filteredHeading = (filteredHeading + 360) % 360;
             }
           }
 
-          updateArrowRotation(lastHeading);
+          updateBeamRotation(filteredHeading);
         }
       };
 
@@ -951,12 +955,12 @@
       }
     }
 
-    // 即時平滑旋轉三角箭頭
-    function updateArrowRotation(deg) {
-      const arrowElem = document.getElementById('user-heading-arrow');
-      if (arrowElem) {
-        arrowElem.style.display = 'block';
-        arrowElem.style.transform = `rotate(${deg}deg)`;
+    // 更新藍色漸層扇形光束角度
+    function updateBeamRotation(deg) {
+      const beamElem = document.getElementById('user-heading-beam');
+      if (beamElem) {
+        beamElem.style.display = 'block';
+        beamElem.style.transform = `rotate(${deg}deg)`;
       }
     }
 
@@ -987,12 +991,12 @@
                 className: '',
                 html: `
                   <div class="user-heading-container">
-                    <div id="user-heading-arrow" class="user-heading-arrow"></div>
+                    <div id="user-heading-beam" class="user-heading-beam"></div>
                     <div class="user-pulse-marker"></div>
                   </div>
                 `,
-                iconSize: [48, 48],
-                iconAnchor: [24, 24]
+                iconSize: [64, 64],
+                iconAnchor: [32, 32]
               });
               userMarker = L.marker(userLatLng, { icon: userCustomIcon, zIndexOffset: 1000 }).addTo(map);
             } else {
