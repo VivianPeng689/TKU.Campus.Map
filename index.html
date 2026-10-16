@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>淡江大學校園互動導覽地圖 - 平滑防抖羅盤指示版</title>
+  <title>淡江大學校園互動導覽地圖 - 平滑三角箭頭指示版</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -90,11 +90,11 @@
       border-right: 8px solid transparent;
       border-bottom: 18px solid #2563eb; /* 實心藍色箭頭 */
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
-      transform-origin: 50% 100%; /* 旋轉軸心固定在箭頭底邊中央 */
-      transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1.0); /* 低通濾波動畫 */
+      transform-origin: 50% 100%; /* 正確旋轉軸心點 */
+      transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1.0); /* 平滑旋轉動畫 */
       pointer-events: none;
       display: none;
-      z-index: 3;
+      z-index: 2;
     }
 
     .user-pulse-marker {
@@ -813,19 +813,16 @@
       }
     });
 
-    // 6. ★ 自動 GPS 即時定位與平滑羅盤三角箭頭 (Circular Low-Pass Filter)
+    // 6. ★ 自動 GPS 即時定位與平滑羅盤三角箭頭 (Low-pass Filtered Compass Arrow)
     let userMarker = null;
     let userAccuracyCircle = null;
     let userLatLng = null;
     let hasCenteredFirstTime = false;
     let watchId = null;
 
-    // 平滑向量與死區控制變數
-    let sinSmooth = null;
-    let cosSmooth = null;
-    let displayHeading = null;
-    const filterAlpha = 0.12;       // 平滑濾波過渡係數（值越小越穩越平滑）
-    const deadzoneThreshold = 2.5;  // 微幅晃動死區門檻（度），小於此變動自動忽略
+    // 平滑濾波變數
+    let lastHeading = null;
+    const filterAlpha = 0.2; // 低通濾波過渡係數（值越小越平滑，可消除手晃抖動）
 
     function startAutoLocationTracking() {
       const statusBadge = document.getElementById('gps-status-badge');
@@ -847,6 +844,7 @@
           userLatLng = [lat, lng];
 
           if (!userMarker) {
+            // 建立含三角箭頭的 DOM Icon
             const userCustomIcon = L.divIcon({
               className: '',
               html: `
@@ -903,7 +901,7 @@
       );
     }
 
-    // 正確的環形向量低通濾波 (Circular Vector Low-Pass Filtering)
+    // 裝置羅盤 orientations 與低通濾波計算
     function initDeviceOrientation() {
       const handleOrientation = (e) => {
         let rawHeading = null;
@@ -915,33 +913,24 @@
         }
 
         if (rawHeading !== null) {
-          const rad = (rawHeading * Math.PI) / 180;
-          const curSin = Math.sin(rad);
-          const curCos = Math.cos(rad);
-
-          if (sinSmooth === null || cosSmooth === null) {
-            sinSmooth = curSin;
-            cosSmooth = curCos;
-            displayHeading = rawHeading;
+          // 平滑化處理 (Smoothed Heading calculation)
+          if (lastHeading === null) {
+            lastHeading = rawHeading;
           } else {
-            // 平滑更新 sin / cos 分量
-            sinSmooth = sinSmooth + filterAlpha * (curSin - sinSmooth);
-            cosSmooth = cosSmooth + filterAlpha * (curCos - cosSmooth);
+            // 處理跨越 0°/360° 的角度不連續性問題
+            let diff = rawHeading - lastHeading;
+            if (diff > 180) diff -= 360;
+            if (diff < -180) diff += 360;
 
-            // 重新算回平滑角度 [0, 360)
-            let smoothedHeading = (Math.atan2(sinSmooth, cosSmooth) * 180) / Math.PI;
-            if (smoothedHeading < 0) smoothedHeading += 360;
-
-            // 計算角度變動量，並進行 0°/360° 邊界校正
-            let diff = Math.abs(smoothedHeading - displayHeading);
-            if (diff > 180) diff = 360 - diff;
-
-            // 超過死區門檻（如 2.5 度）時才驅動 UI 轉動，排除手震與微小噪音
-            if (diff >= deadzoneThreshold) {
-              displayHeading = smoothedHeading;
-              updateArrowRotation(displayHeading);
+            // 若微幅抖動小於 1 度則忽視，避免無謂震盪
+            if (Math.abs(diff) > 1.0) {
+              lastHeading = lastHeading + filterAlpha * diff;
+              // 規範數值至 [0, 360) 區間
+              lastHeading = (lastHeading + 360) % 360;
             }
           }
+
+          updateArrowRotation(lastHeading);
         }
       };
 
@@ -962,7 +951,7 @@
       }
     }
 
-    // 即時旋轉三角箭頭 DOM 元素
+    // 即時平滑旋轉三角箭頭
     function updateArrowRotation(deg) {
       const arrowElem = document.getElementById('user-heading-arrow');
       if (arrowElem) {
