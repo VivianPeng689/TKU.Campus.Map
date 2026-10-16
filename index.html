@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>淡江大學校園互動導覽地圖 - 裝置羅盤方向指示版</title>
+  <title>淡江大學校園互動導覽地圖 - 平滑三角箭頭指示版</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -70,29 +70,31 @@
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
     }
 
-    /* GPS 脈衝動態光圈與羅盤朝向扇形光束 */
+    /* GPS 脈衝動態光圈與平滑三角箭頭 */
     .user-heading-container {
       position: relative;
-      width: 60px;
-      height: 60px;
+      width: 48px;
+      height: 48px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .heading-beam {
+    /* 精確正三角箭頭指示器 */
+    .user-heading-arrow {
       position: absolute;
-      top: -10px;
+      top: 4px;
       width: 0;
       height: 0;
-      border-left: 24px solid transparent;
-      border-right: 24px solid transparent;
-      border-top: 48px solid rgba(37, 99, 235, 0.35);
-      filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.5));
-      transform-origin: 50% 100%;
-      transition: transform 0.15s ease-out;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 18px solid #2563eb; /* 實心藍色箭頭 */
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+      transform-origin: 50% 100%; /* 正確旋轉軸心點 */
+      transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1.0); /* 平滑旋轉動畫 */
       pointer-events: none;
-      display: none; /* 有羅盤訊號時才顯示 */
+      display: none;
+      z-index: 3;
     }
 
     .user-pulse-marker {
@@ -112,7 +114,7 @@
       left: -9px;
       width: 28px;
       height: 28px;
-      background-color: rgba(37, 99, 235, 0.4);
+      background-color: rgba(37, 99, 235, 0.35);
       border-radius: 50%;
       animation: pulse-ring 2s infinite ease-out;
     }
@@ -811,13 +813,16 @@
       }
     });
 
-    // 6. ★ 自動 GPS 即時定位與陀螺儀/電磁羅盤方向指示器 (DeviceOrientation)
+    // 6. ★ 自動 GPS 即時定位與平滑羅盤三角箭頭 (Low-pass Filtered Compass Arrow)
     let userMarker = null;
     let userAccuracyCircle = null;
     let userLatLng = null;
     let hasCenteredFirstTime = false;
     let watchId = null;
-    let currentHeading = null;
+
+    // 平滑濾波變數
+    let lastHeading = null;
+    const filterAlpha = 0.2; // 低通濾波過渡係數（值越小越平滑，可消除手晃抖動）
 
     function startAutoLocationTracking() {
       const statusBadge = document.getElementById('gps-status-badge');
@@ -829,7 +834,6 @@
         return;
       }
 
-      // 初始化羅盤方向監聽 (Device Orientation)
       initDeviceOrientation();
 
       watchId = navigator.geolocation.watchPosition(
@@ -840,17 +844,17 @@
           userLatLng = [lat, lng];
 
           if (!userMarker) {
-            // 建立含扇形光束的 DOM Icon
+            // 建立含三角箭頭的 DOM Icon
             const userCustomIcon = L.divIcon({
               className: '',
               html: `
                 <div class="user-heading-container">
-                  <div id="user-heading-beam" class="heading-beam"></div>
+                  <div id="user-heading-arrow" class="user-heading-arrow"></div>
                   <div class="user-pulse-marker"></div>
                 </div>
               `,
-              iconSize: [60, 60],
-              iconAnchor: [30, 30]
+              iconSize: [48, 48],
+              iconAnchor: [24, 24]
             });
 
             userMarker = L.marker(userLatLng, { icon: userCustomIcon, zIndexOffset: 1000 }).addTo(map);
@@ -897,26 +901,39 @@
       );
     }
 
-    // ★ 裝置羅盤 orientations 相容與權限處理
+    // 裝置羅盤 orientations 與低通濾波計算
     function initDeviceOrientation() {
       const handleOrientation = (e) => {
-        let heading = null;
+        let rawHeading = null;
 
-        if (e.webkitCompassHeading !== undefined) {
-          // iOS Safari 羅盤方位角
-          heading = e.webkitCompassHeading;
-        } else if (e.alpha !== null) {
-          // Android / 一般 Chrome 方位角轉算
-          heading = 360 - e.alpha;
+        if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
+          rawHeading = e.webkitCompassHeading;
+        } else if (e.alpha !== null && e.alpha !== undefined) {
+          rawHeading = 360 - e.alpha;
         }
 
-        if (heading !== null) {
-          currentHeading = heading;
-          updateBeamRotation(heading);
+        if (rawHeading !== null) {
+          // 平滑化處理 (Smoothed Heading calculation)
+          if (lastHeading === null) {
+            lastHeading = rawHeading;
+          } else {
+            // 處理跨越 0°/360° 的角度不連續性問題
+            let diff = rawHeading - lastHeading;
+            if (diff > 180) diff -= 360;
+            if (diff < -180) diff += 360;
+
+            // 若微幅抖動小於 1 度則忽視，避免無謂震盪
+            if (Math.abs(diff) > 1.0) {
+              lastHeading = lastHeading + filterAlpha * diff;
+              // 規範數值至 [0, 360) 區間
+              lastHeading = (lastHeading + 360) % 360;
+            }
+          }
+
+          updateArrowRotation(lastHeading);
         }
       };
 
-      // iOS 13+ 權限請求判定
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()
           .then(permissionState => {
@@ -926,7 +943,6 @@
           })
           .catch(console.error);
       } else {
-        // Android 與標準 Web 規範監聽
         if ('ondeviceorientationabsolute' in window) {
           window.addEventListener('deviceorientationabsolute', handleOrientation, true);
         } else if ('ondeviceorientation' in window) {
@@ -935,12 +951,12 @@
       }
     }
 
-    // 即時旋轉光束 DOM 元素
-    function updateBeamRotation(deg) {
-      const beamElem = document.getElementById('user-heading-beam');
-      if (beamElem) {
-        beamElem.style.display = 'block';
-        beamElem.style.transform = `rotate(${deg}deg)`;
+    // 即時平滑旋轉三角箭頭
+    function updateArrowRotation(deg) {
+      const arrowElem = document.getElementById('user-heading-arrow');
+      if (arrowElem) {
+        arrowElem.style.display = 'block';
+        arrowElem.style.transform = `rotate(${deg}deg)`;
       }
     }
 
@@ -948,7 +964,6 @@
       const btn = document.getElementById('locate-btn');
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-base"></i>';
 
-      // 手動定位時若在 iOS 上可嘗試觸發羅盤授權
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission().then(state => {
           if (state === 'granted') {
@@ -972,12 +987,12 @@
                 className: '',
                 html: `
                   <div class="user-heading-container">
-                    <div id="user-heading-beam" class="heading-beam"></div>
+                    <div id="user-heading-arrow" class="user-heading-arrow"></div>
                     <div class="user-pulse-marker"></div>
                   </div>
                 `,
-                iconSize: [60, 60],
-                iconAnchor: [30, 30]
+                iconSize: [48, 48],
+                iconAnchor: [24, 24]
               });
               userMarker = L.marker(userLatLng, { icon: userCustomIcon, zIndexOffset: 1000 }).addTo(map);
             } else {
