@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>淡江大學校園互動導覽地圖 - -45度角度校正羅盤版</title>
+  <title>淡江大學校園互動導覽地圖 - 最新地標與處室校正版</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -70,34 +70,7 @@
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
     }
 
-    /* GPS 脈衝動態光圈與平滑三角箭頭 */
-    .user-heading-container {
-      position: relative;
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* 極致平滑防抖三角箭頭 */
-    .user-heading-arrow {
-      position: absolute;
-      top: 3px;
-      width: 0;
-      height: 0;
-      border-left: 7.5px solid transparent;
-      border-right: 7.5px solid transparent;
-      border-bottom: 18px solid #2563eb;
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.28));
-      transform-origin: 50% 100%;
-      will-change: transform;
-      transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1.0);
-      pointer-events: none;
-      display: none;
-      z-index: 3;
-    }
-
+    /* GPS 脈衝動態光圈 */
     .user-pulse-marker {
       position: relative;
       width: 16px;
@@ -106,7 +79,6 @@
       border: 3px solid #ffffff;
       border-radius: 50%;
       box-shadow: 0 0 10px rgba(37,99,235,0.8);
-      z-index: 2;
     }
     .user-pulse-marker::after {
       content: '';
@@ -115,7 +87,7 @@
       left: -9px;
       width: 28px;
       height: 28px;
-      background-color: rgba(37, 99, 235, 0.35);
+      background-color: rgba(37, 99, 235, 0.4);
       border-radius: 50%;
       animation: pulse-ring 2s infinite ease-out;
     }
@@ -153,7 +125,7 @@
       </div>
       <p class="text-[10px] sm:text-[11px] text-slate-500 mb-2">景點與辦公室共用同一個查詢介面。</p>
 
-      <!-- 關鍵字搜尋 -->
+      <!-- 關鍵字搜尋 (主要保留區域) -->
       <div class="relative">
         <input 
           type="text" 
@@ -314,7 +286,7 @@
       }, 3000);
     }
 
-    // 1. 校園地標資料集
+    // 1. ★ 校園地標資料集 (校正代號、名稱、簡介與新增 4 地標)
     const campusPlaces = [
       { id: "A", name: "行政大樓", lat: 25.174879496685257, lng: 121.44905729987109, cat: "admin", color: "#059669", desc: "學校最高行政決策與主要處室大樓（校長室、教務處、研發處等）" },
       { id: "H", name: "宮燈教室", lat: 25.17448723069087, lng: 121.44939660812109, cat: "academic", color: "#dc2626", desc: "特色中國傳統式瓦舍教室區" },
@@ -357,10 +329,13 @@
       { id: "JS_SQUARE", name: "驚聲廣場", lat: 25.173818997388533, lng: 121.44742518952371, cat: "life", color: "#8b5cf6", desc: "校園綠意休憩廣場" }
     ];
 
-    // 2. 處室與系所資料庫
+    // 2. ★ 全面同步更新之處室與系所資料庫
     const campusOffices = [
+      // 守謙國際會議中心
       { name: "事務整備組辦公室", group: "總務處", building: "守謙國際會議中心", room: "HC308", targetId: "HC" },
       { name: "淡江大學校友總會會館", group: "其它單位", building: "守謙國際會議中心", room: "HC301", targetId: "HC" },
+
+      // 行政大樓 (A)
       { name: "文書組", group: "總務處", building: "行政大樓", room: "A102", targetId: "A" },
       { name: "收發室", group: "總務處", building: "行政大樓", room: "A101", targetId: "A" },
       { name: "職能福利組", group: "其它單位", building: "行政大樓", room: "A103", targetId: "A" },
@@ -373,10 +348,16 @@
       { name: "人力資源處 (人事室)", group: "其它單位", building: "行政大樓", room: "A307", targetId: "A" },
       { name: "校長室", group: "秘書處/校長室", building: "行政大樓", room: "A401", targetId: "A" },
       { name: "副校長室 (學術/行政/國際)", group: "秘書處/校長室", building: "行政大樓", room: "A402 / A403", targetId: "A" },
+
+      // 會文館 / F棟
       { name: "環境保護及安全衛生中心", group: "總務處", building: "會文館", room: "F101", targetId: "HW" },
       { name: "總務處聯合辦公室 (總務長室/節能與空間組/資產組)", group: "總務處", building: "會文館", room: "F103", targetId: "HW" },
+
+      // 傳播館 (O/Q)
       { name: "資訊傳播學系 辦公室", group: "文學院", building: "傳播館", room: "O304", targetId: "O" },
       { name: "大眾傳播學系 辦公室", group: "文學院", building: "傳播館/驚聲大樓", room: "Q406", targetId: "O" },
+
+      // 驚聲紀念大樓 (T)
       { name: "資訊處 校務資訊組", group: "資訊處", building: "驚聲紀念大樓", room: "T107", targetId: "T" },
       { name: "資訊處 網路管理組", group: "資訊處", building: "驚聲紀念大樓", room: "T109", targetId: "T" },
       { name: "文錙藝術中心 主任室", group: "其它單位", building: "驚聲紀念大樓", room: "T212", targetId: "T" },
@@ -391,10 +372,14 @@
       { name: "全英語教學推動中心", group: "教務處", building: "驚聲紀念大樓", room: "T1103", targetId: "T" },
       { name: "日本研究中心 / 東協研究中心", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T1106", targetId: "T" },
       { name: "國際事務與戰略研究所", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T1202", targetId: "T" },
+
+      // 鍾靈化學館 (C)
       { name: "化學學系 辦公室", group: "理學院", building: "鍾靈化學館", room: "C306", targetId: "C" },
       { name: "鍾靈分館 (理學分館圖書館)", group: "圖書館", building: "鍾靈化學館", room: "C301", targetId: "C" },
       { name: "科學教育中心 辦公室", group: "理學院", building: "鍾靈化學館", room: "C434", targetId: "C" },
       { name: "尖端材料科學學士學位學程", group: "理學院", building: "鍾靈化學館", room: "C448", targetId: "C" },
+
+      // 工學大樓 (E) / 工學館 (G)
       { name: "工學院 院長室 / 技正辦公室", group: "工學院", building: "工學大樓", room: "E682", targetId: "E" },
       { name: "資訊工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E646", targetId: "E" },
       { name: "電機工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E629", targetId: "E" },
@@ -407,17 +392,23 @@
       { name: "人工智慧學系 (AI系)", group: "工學院", building: "守謙國際會議中心", room: "HC303", targetId: "HC" },
       { name: "安全辦公室", group: "總務處", building: "工學館", room: "G101", targetId: "G" },
       { name: "財務處", group: "其它單位", building: "工學館", room: "G401", targetId: "G" },
+
+      // 教育館 (ED)
       { name: "教育心理與諮商研究所", group: "教育學院", building: "教育館", room: "ED103", targetId: "ED" },
       { name: "教育學院 院辦公室", group: "教育學院", building: "教育館", room: "ED104 / ED105", targetId: "ED" },
       { name: "教育與未來設計學系", group: "教育學院", building: "教育館", room: "ED106", targetId: "ED" },
       { name: "教育科技學系 辦公室", group: "教育學院", building: "教育館", room: "ED203", targetId: "ED" },
       { name: "師資培育中心 辦公室", group: "教育學院", building: "教育館", room: "ED304", targetId: "ED" },
       { name: "策略遠見研究中心", group: "教育學院", building: "教育館", room: "ED305", targetId: "ED" },
+
+      // 外國語文大樓 (FL)
       { name: "英文學系 辦公室", group: "外語學院", building: "外國語文大樓", room: "FL207", targetId: "FL" },
       { name: "教學卓越計畫辦公室", group: "教務處", building: "外國語文大樓", room: "FL216", targetId: "FL" },
       { name: "日本語文學系 辦公室", group: "外語學院", building: "外國語文大樓", room: "FL317", targetId: "FL" },
       { name: "外國語文學院 院辦公室", group: "外語學院", building: "外國語文大樓", room: "FL410", targetId: "FL" },
       { name: "歐洲語文學系 (西文組/法文組/德文組/俄文組)", group: "外語學院", building: "外國語文大樓", room: "FL413", targetId: "FL" },
+
+      // 覺生紀念圖書館 (U) & 覺生綜合大樓 (I)
       { name: "採編組 辦公室", group: "圖書館", building: "覺生紀念圖書館", room: "U101", targetId: "U" },
       { name: "典藏閱覽組", group: "圖書館", building: "覺生紀念圖書館", room: "U201", targetId: "U" },
       { name: "數位資訊組 辦公室", group: "圖書館", building: "覺生紀念圖書館", room: "U202", targetId: "U" },
@@ -428,10 +419,14 @@
       { name: "遠距教學發展中心 (iClass/數位教材)", group: "教務處", building: "覺生綜合大樓", room: "I101", targetId: "I" },
       { name: "品質保證稽核處 及 校務研究中心", group: "其它單位", building: "覺生綜合大樓", room: "I801", targetId: "I" },
       { name: "覺生國際會議廳", group: "其它單位", building: "覺生綜合大樓", room: "I1001", targetId: "I" },
+
+      // 騮先紀念科學館 (S) / 鍾靈化學館 (C) / 出版中心 (M)
       { name: "理學院 院辦公室", group: "理學院", building: "騮先紀念科學館", room: "S220", targetId: "S" },
       { name: "物理學系 辦公室", group: "理學院", building: "騮先紀念科學館", room: "S303", targetId: "S" },
       { name: "應用數學與數據科學學系", group: "理學院", building: "騮先紀念科學館", room: "S401", targetId: "S" },
       { name: "出版中心 辦公室", group: "其它單位", building: "海事博物館", room: "M109", targetId: "M" },
+
+      // 學務處 & 商管學院 (B)
       { name: "生輔組 (就貸/兵役/獎學金)", group: "學務處", building: "商館", room: "B402", targetId: "B" },
       { name: "生輔組 (學雜費減免/弱勢助學)", group: "學務處", building: "商館", room: "B421", targetId: "B" },
       { name: "生輔組 (請假/校安交通)", group: "學務處", building: "商館", room: "B401", targetId: "B" },
@@ -660,6 +655,7 @@
         activeIndicator.classList.add('hidden');
       }
 
+      // 1. 篩選處室 (支援健康中心搜尋衛保組)
       let matchedOffices = campusOffices.filter(o => {
         if (dataType === 'place') return false;
         if (group !== 'all' && o.group !== group) return false;
@@ -675,6 +671,7 @@
         return true;
       });
 
+      // 2. 篩選地標建築
       let matchedPlaces = campusPlaces.filter(p => {
         if (dataType === 'office') return false;
         if (placeCat !== 'all' && p.cat !== placeCat) return false;
@@ -814,19 +811,12 @@
       }
     });
 
-    // 6. ★ 自動 GPS 即時定位與 -45度角度校正羅盤演算法
+    // 6. 自動 GPS 即時定位與追蹤
     let userMarker = null;
     let userAccuracyCircle = null;
     let userLatLng = null;
     let hasCenteredFirstTime = false;
     let watchId = null;
-
-    // 連續旋轉角度濾波器變數
-    let currentRotationAngle = 0;
-    let isHeadingInitialized = false;
-    const filterAlpha = 0.12;      // 過渡係數
-    const deadbandThreshold = 2.0;  // 死區過濾門檻
-    const HEADING_OFFSET = -45;    // ★ 45 度的補償修正值 (Offset)
 
     function startAutoLocationTracking() {
       const statusBadge = document.getElementById('gps-status-badge');
@@ -838,8 +828,6 @@
         return;
       }
 
-      initDeviceOrientation();
-
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           const lat = pos.coords.latitude;
@@ -848,19 +836,12 @@
           userLatLng = [lat, lng];
 
           if (!userMarker) {
-            const userCustomIcon = L.divIcon({
-              className: '',
-              html: `
-                <div class="user-heading-container">
-                  <div id="user-heading-arrow" class="user-heading-arrow"></div>
-                  <div class="user-pulse-marker"></div>
-                </div>
-              `,
-              iconSize: [48, 48],
-              iconAnchor: [24, 24]
+            const userIcon = L.divIcon({
+              className: 'user-pulse-marker',
+              iconSize: [16, 16],
+              iconAnchor: [8, 8]
             });
-
-            userMarker = L.marker(userLatLng, { icon: userCustomIcon, zIndexOffset: 1000 }).addTo(map);
+            userMarker = L.marker(userLatLng, { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
             userMarker.bindTooltip("我的目前位置", { permanent: false, direction: 'top' });
 
             userAccuracyCircle = L.circle(userLatLng, {
@@ -904,75 +885,9 @@
       );
     }
 
-    // 裝置羅盤 orientations 與 -45° 角度校正平滑計算
-    function initDeviceOrientation() {
-      const handleOrientation = (e) => {
-        let rawHeading = null;
-
-        if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
-          rawHeading = e.webkitCompassHeading;
-        } else if (e.alpha !== null && e.alpha !== undefined) {
-          rawHeading = (360 - e.alpha) % 360;
-        }
-
-        if (e.beta && Math.abs(e.beta) > 75) return;
-
-        if (rawHeading !== null && !isNaN(rawHeading)) {
-          // ★ 關鍵點：在此加上 -45° 角度補償，並確保角度落在 [0, 360) 範圍
-          const correctedHeading = (rawHeading + HEADING_OFFSET + 360) % 360;
-
-          if (!isHeadingInitialized) {
-            currentRotationAngle = correctedHeading;
-            isHeadingInitialized = true;
-          } else {
-            let delta = (correctedHeading - (currentRotationAngle % 360) + 540) % 360 - 180;
-
-            if (Math.abs(delta) > deadbandThreshold) {
-              currentRotationAngle += delta * filterAlpha;
-            }
-          }
-
-          updateArrowRotation(currentRotationAngle);
-        }
-      };
-
-      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission()
-          .then(permissionState => {
-            if (permissionState === 'granted') {
-              window.addEventListener('deviceorientation', handleOrientation, true);
-            }
-          })
-          .catch(console.error);
-      } else {
-        if ('ondeviceorientationabsolute' in window) {
-          window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-        } else if ('ondeviceorientation' in window) {
-          window.addEventListener('deviceorientation', handleOrientation, true);
-        }
-      }
-    }
-
-    // 即時套用 CSS Transform 順暢旋轉
-    function updateArrowRotation(deg) {
-      const arrowElem = document.getElementById('user-heading-arrow');
-      if (arrowElem) {
-        arrowElem.style.display = 'block';
-        arrowElem.style.transform = `rotate(${deg}deg)`;
-      }
-    }
-
     function recenterUser() {
       const btn = document.getElementById('locate-btn');
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-base"></i>';
-
-      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission().then(state => {
-          if (state === 'granted') {
-            initDeviceOrientation();
-          }
-        }).catch(() => {});
-      }
 
       if (userLatLng) {
         map.flyTo(userLatLng, 18, { duration: 1 });
@@ -985,18 +900,12 @@
           (pos) => {
             userLatLng = [pos.coords.latitude, pos.coords.longitude];
             if (!userMarker) {
-              const userCustomIcon = L.divIcon({
-                className: '',
-                html: `
-                  <div class="user-heading-container">
-                    <div id="user-heading-arrow" class="user-heading-arrow"></div>
-                    <div class="user-pulse-marker"></div>
-                  </div>
-                `,
-                iconSize: [48, 48],
-                iconAnchor: [24, 24]
+              const userIcon = L.divIcon({
+                className: 'user-pulse-marker',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
               });
-              userMarker = L.marker(userLatLng, { icon: userCustomIcon, zIndexOffset: 1000 }).addTo(map);
+              userMarker = L.marker(userLatLng, { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
             } else {
               userMarker.setLatLng(userLatLng);
             }
