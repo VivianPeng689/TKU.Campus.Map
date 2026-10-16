@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>淡江大學校園互動導覽地圖 - +90度角度修正版</title>
+  <title>淡江大學校園互動導覽地圖 - -45度角度校正羅盤版</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -814,7 +814,7 @@
       }
     });
 
-    // 6. ★ 自動 GPS 即時定位與帶有 +90° 補償之平滑羅盤演算法 (Heading + 90deg Offset)
+    // 6. ★ 自動 GPS 即時定位與 -45度角度校正羅盤演算法
     let userMarker = null;
     let userAccuracyCircle = null;
     let userLatLng = null;
@@ -824,8 +824,9 @@
     // 連續旋轉角度濾波器變數
     let currentRotationAngle = 0;
     let isHeadingInitialized = false;
-    const filterAlpha = 0.12;     // 平滑過渡係數
-    const deadbandThreshold = 2.0; // 2.0 度防震死區門檻
+    const filterAlpha = 0.12;      // 過渡係數
+    const deadbandThreshold = 2.0;  // 死區過濾門檻
+    const HEADING_OFFSET = -45;    // ★ 45 度的補償修正值 (Offset)
 
     function startAutoLocationTracking() {
       const statusBadge = document.getElementById('gps-status-badge');
@@ -903,34 +904,29 @@
       );
     }
 
-    // ★ 裝置羅盤 orientations 計算 (+ 90 度角度補償)
+    // 裝置羅盤 orientations 與 -45° 角度校正平滑計算
     function initDeviceOrientation() {
       const handleOrientation = (e) => {
         let rawHeading = null;
 
         if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
-          // iOS Safari 羅盤方位角
           rawHeading = e.webkitCompassHeading;
         } else if (e.alpha !== null && e.alpha !== undefined) {
-          // Android Chrome 座標系統轉換
           rawHeading = (360 - e.alpha) % 360;
         }
 
-        // 當手機幾乎垂直立起（俯仰角 Beta > 75°）時，自動暫停更新
         if (e.beta && Math.abs(e.beta) > 75) return;
 
         if (rawHeading !== null && !isNaN(rawHeading)) {
-          // ★ 修正需求：加入 +90 度的角度偏移補償 (Heading + 90deg Offset)
-          const adjustedHeading = (rawHeading + 90) % 360;
+          // ★ 關鍵點：在此加上 -45° 角度補償，並確保角度落在 [0, 360) 範圍
+          const correctedHeading = (rawHeading + HEADING_OFFSET + 360) % 360;
 
           if (!isHeadingInitialized) {
-            currentRotationAngle = adjustedHeading;
+            currentRotationAngle = correctedHeading;
             isHeadingInitialized = true;
           } else {
-            // 計算目前目標角度與全域角度之最短夾角 (Shortest Angular Delta)
-            let delta = (adjustedHeading - (currentRotationAngle % 360) + 540) % 360 - 180;
+            let delta = (correctedHeading - (currentRotationAngle % 360) + 540) % 360 - 180;
 
-            // 若微幅抖動小於死區門檻（2.0 度），無視其微小手震
             if (Math.abs(delta) > deadbandThreshold) {
               currentRotationAngle += delta * filterAlpha;
             }
