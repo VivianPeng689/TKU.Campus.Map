@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>淡江大學校園互動導覽地圖 - 極致平滑羅盤版</title>
+  <title>淡江大學校園互動導覽地圖 - 方位角精確校正版</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -70,7 +70,7 @@
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
     }
 
-    /* GPS 脈衝動態光圈與平滑三角箭頭 */
+    /* GPS 脈衝動態光圈與平滑三角箭頭容器 */
     .user-heading-container {
       position: relative;
       width: 48px;
@@ -80,17 +80,14 @@
       justify-content: center;
     }
 
-    /* 極致平滑防抖三角箭頭 */
+    /* 精確 0deg 垂直指向 12 點鐘方向（正北方）之 SVG 藍色箭頭 */
     .user-heading-arrow {
       position: absolute;
-      top: 3px;
-      width: 0;
-      height: 0;
-      border-left: 7.5px solid transparent;
-      border-right: 7.5px solid transparent;
-      border-bottom: 18px solid #2563eb;
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.28));
-      transform-origin: 50% 100%;
+      top: 0;
+      left: 0;
+      width: 48px;
+      height: 48px;
+      transform-origin: 24px 24px; /* 旋轉軸心完全對齊藍色點中央 */
       will-change: transform;
       transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1.0);
       pointer-events: none;
@@ -814,18 +811,17 @@
       }
     });
 
-    // 6. ★ 自動 GPS 即時定位與連續不間斷平滑羅盤演算法 (Continuous Unbroken Angle Tracking)
+    // 6. ★ 自動 GPS 即時定位與正北方 0° 完全對齊之羅盤演算法
     let userMarker = null;
     let userAccuracyCircle = null;
     let userLatLng = null;
     let hasCenteredFirstTime = false;
     let watchId = null;
 
-    // 連續旋轉角度濾波器變數
-    let currentRotationAngle = 0; // 記錄全域連續旋轉角度（可為負值或大於 360 度）
+    let currentRotationAngle = 0;
     let isHeadingInitialized = false;
-    const filterAlpha = 0.12;     // 極致平滑過渡係數 (0.12 最佳平衡抗抖動與反應速度)
-    const deadbandThreshold = 2.0; // 小於 2 度的無效手晃微抖動自動忽略
+    const filterAlpha = 0.12;     // 極致平滑過渡係數
+    const deadbandThreshold = 2.0; // 2 度無效手晃微抖動過濾
 
     function startAutoLocationTracking() {
       const statusBadge = document.getElementById('gps-status-badge');
@@ -847,11 +843,14 @@
           userLatLng = [lat, lng];
 
           if (!userMarker) {
+            // ★ 採用 0deg 正好指向 12 點鐘方向 (正北方) 之精確 SVG 向量箭頭
             const userCustomIcon = L.divIcon({
               className: '',
               html: `
                 <div class="user-heading-container">
-                  <div id="user-heading-arrow" class="user-heading-arrow"></div>
+                  <svg id="user-heading-arrow" class="user-heading-arrow" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M24 6L33 26L24 22L15 26L24 6Z" fill="#2563eb" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+                  </svg>
                   <div class="user-pulse-marker"></div>
                 </div>
               `,
@@ -903,20 +902,20 @@
       );
     }
 
-    // 裝置羅盤 orientations 與連續角度防反轉平滑計算
+    // 裝置羅盤 orientations 校正
     function initDeviceOrientation() {
       const handleOrientation = (e) => {
         let rawHeading = null;
 
         if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
-          // iOS Safari 羅盤方位角 (正北為 0°, 東方為 90°, 南方為 180°, 西方為 270°)
+          // iOS Safari 羅盤：0° 正北、90° 正東、180° 正南、270° 正西
           rawHeading = e.webkitCompassHeading;
         } else if (e.alpha !== null && e.alpha !== undefined) {
-          // Android Chrome 座標系統轉換
+          // Android Chrome: e.alpha 為自轉角，轉算為正北方羅盤角
           rawHeading = (360 - e.alpha) % 360;
         }
 
-        // 當手機幾乎垂直立起（俯仰角 Beta > 75°）時，陀螺儀易卡死，自動暫停更新以防亂甩
+        // 俯仰角防卡死保護
         if (e.beta && Math.abs(e.beta) > 75) return;
 
         if (rawHeading !== null && !isNaN(rawHeading)) {
@@ -924,10 +923,9 @@
             currentRotationAngle = rawHeading;
             isHeadingInitialized = true;
           } else {
-            // 計算目前目標角度與全域角度之最短夾角 (Shortest Angular Delta)
+            // 最短旋轉夾角算式，避免跨越 360°/0° 邊界時倒轉
             let delta = (rawHeading - (currentRotationAngle % 360) + 540) % 360 - 180;
 
-            // 若微幅抖動小於死區門檻（例如 2.0 度），無視其微小手震
             if (Math.abs(delta) > deadbandThreshold) {
               currentRotationAngle += delta * filterAlpha;
             }
@@ -954,7 +952,6 @@
       }
     }
 
-    // 即時套用 CSS Transform 順暢旋轉
     function updateArrowRotation(deg) {
       const arrowElem = document.getElementById('user-heading-arrow');
       if (arrowElem) {
@@ -990,7 +987,9 @@
                 className: '',
                 html: `
                   <div class="user-heading-container">
-                    <div id="user-heading-arrow" class="user-heading-arrow"></div>
+                    <svg id="user-heading-arrow" class="user-heading-arrow" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M24 6L33 26L24 22L15 26L24 6Z" fill="#2563eb" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+                    </svg>
                     <div class="user-pulse-marker"></div>
                   </div>
                 `,
