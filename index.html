@@ -130,7 +130,7 @@
         <input 
           type="text" 
           id="filter-keyword" 
-          placeholder="例如：L501、L514、K101、健康中心" 
+          placeholder="例如：L501、TH、K101、健康中心" 
           class="w-full pl-8 pr-8 py-1.5 sm:py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all shadow-inner"
         />
         <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
@@ -286,9 +286,10 @@
       }, 3000);
     }
 
-    // 1. 校園地標資料集 (已更新代碼與簡介: RT, XC, Z)
+    // 1. 校園地標資料集 (已新增 TH、修正 K 座標、分立 O 與 Q 棟)
     const campusPlaces = [
       { id: "A", name: "行政大樓", lat: 25.174879496685257, lng: 121.44905729987109, cat: "admin", color: "#059669", desc: "學校最高行政決策與主要處室大樓（校長室、教務處、研發處等）" },
+      { id: "TH", name: "校史館暨張建邦創辦人紀念館", lat: 25.173911215588944, lng: 121.44935892114188, cat: "admin", color: "#0284c7", desc: "淡江校史展覽與張建邦創辦人文物紀念館" },
       { id: "H", name: "宮燈教室", lat: 25.17448723069087, lng: 121.44939660812109, cat: "academic", color: "#dc2626", desc: "特色中國傳統式瓦舍教室區" },
       { id: "V", name: "視聽教育館", lat: 25.17499312092134, lng: 121.4494349008392, cat: "academic", color: "#dc2626", desc: "語言教學與視聽教育發展專屬大樓" },
       { id: "QP", name: "覺軒會館", lat: 25.173725414003933, lng: 121.4480888307921, cat: "life", color: "#d97706", desc: "QP Terrace，景觀花園餐廳與典雅會館" },
@@ -307,7 +308,7 @@
       { id: "T", name: "驚聲紀念大樓", lat: 25.17549138511537, lng: 121.45133140359606, cat: "academic", color: "#dc2626", desc: "國際處 (T1002)、外交系全英班 (T802)、國觀系 (T806)、國務學院 (T902)、全政經系 (T1102)" },
       { id: "E", name: "工學大樓", lat: 25.175972014036386, lng: 121.4518329766833, cat: "academic", color: "#dc2626", desc: "工學院 (E682)、資工 (E646)、電機 (E629)、土木 (E729)、航太 (E788)、機械 (E790)" },
       { id: "G", name: "工學館", lat: 25.176222037416437, lng: 121.45101490302378, cat: "academic", color: "#dc2626", desc: "工程實習工廠、安全辦公室 (G101)、財務處 (G401)" },
-      { id: "K", name: "建築館", lat: 25.17610000000000, lng: 121.45150000000000, cat: "academic", color: "#dc2626", desc: "建築學系系辦公室 (K101) 與評圖展演空間" },
+      { id: "K", name: "建築館", lat: 25.176481971793997, lng: 121.45105771091248, cat: "academic", color: "#dc2626", desc: "建築學系系辦公室 (K101) 與評圖展演空間" },
       { id: "SWAN", name: "黑天鵝展示廳", lat: 25.176342748545554, lng: 121.45056420144378, cat: "life", color: "#4f46e5", desc: "校園文藝展覽、成果發表與海報特展展廳" },
       { id: "M", name: "海事博物館", lat: 25.176231747056615, lng: 121.45043018144673, cat: "life", color: "#0891b2", desc: "衛生保健組（健康中心/下層）、出版中心 (M109)" },
       { id: "ED", name: "教育館", lat: 25.17583365135925, lng: 121.45271542347635, cat: "academic", color: "#dc2626", desc: "教育學院院辦 (ED104)、心諮所 (ED103)、教科系 (ED203)、師培中心 (ED304)" },
@@ -318,7 +319,8 @@
       { id: "BUS27", name: "紅27公車站", lat: 25.176575185036917, lng: 121.44828350788619, cat: "life", color: "#0284c7", desc: "前往淡水捷運站之主要公車發車乘車處" },
       { id: "SG", name: "紹謨紀念體育館", lat: 25.176303147356244, lng: 121.44858482167012, cat: "sport", color: "#16a34a", desc: "室內羽球/籃球場、課外活動輔導組 (SG211)" },
       { id: "BUS28", name: "紅28公車站", lat: 25.174715780941035, lng: 121.44867511038852, cat: "life", color: "#0284c7", desc: "往返淡水捷運站校內公車停靠站點" },
-      { id: "O", name: "傳播館", lat: 25.175609258001995, lng: 121.44901102352833, cat: "academic", color: "#dc2626", desc: "資傳系辦公室 (O304)、大傳系辦公室 (Q406/O棟影音棚)" },
+      { id: "O", name: "傳播館 O", lat: 25.175713357457894, lng: 121.4487737409017, cat: "academic", color: "#dc2626", desc: "資傳系辦公室 (O304)" },
+      { id: "Q", name: "傳播館 Q", lat: 25.17561383323428, lng: 121.44909694706205, cat: "academic", color: "#dc2626", desc: "大傳系辦公室 (Q406) 與傳播學院影音棚" },
       { id: "C", name: "鍾靈化學館", lat: 25.175216949445087, lng: 121.44878854583827, cat: "academic", color: "#dc2626", desc: "化學系辦 (C306)、鍾靈分館 (C301)、科教中心 (C434)、尖端材料學程 (C448)" },
       { id: "S", name: "騮先紀念科學館", lat: 25.17549126830538, lng: 121.44818655683316, cat: "academic", color: "#dc2626", desc: "理學院院辦 (S220)、物理系 (S303)、應數與數據科學系 (S401)" },
       { id: "HC", name: "守謙國際會議中心", lat: 25.17474048214446, lng: 121.44787456316837, cat: "admin", color: "#0284c7", desc: "校友總會會館 (HC301)、事務整備組 (HC308)、AI系辦 (HC303)" },
@@ -329,13 +331,15 @@
       { id: "JS_SQUARE", name: "驚聲廣場", lat: 25.173818997388533, lng: 121.44742518952371, cat: "life", color: "#8b5cf6", desc: "校園綠意休憩廣場" }
     ];
 
-    // 2. 處室與系所資料庫 (目標地號已對應更新為 Z, K 等)
+    // 2. 處室與系所資料庫 (大傳系指向 Q, 資傳系指向 O)
     const campusOffices = [
       { name: "資訊與圖書館學系 辦公室", group: "文學院", building: "文學館", room: "L501", targetId: "L" },
       { name: "中國文學學系 辦公室", group: "文學院", building: "文學館", room: "L514", targetId: "L" },
       { name: "文學院 辦公室", group: "文學院", building: "文學館", room: "L519", targetId: "L" },
       { name: "歷史學系 辦公室", group: "文學院", building: "文學館", room: "L523", targetId: "L" },
       { name: "建築學系 辦公室", group: "工學院", building: "建築館", room: "K101", targetId: "K" },
+      { name: "資訊傳播學系 辦公室", group: "文學院", building: "傳播館 O", room: "O304", targetId: "O" },
+      { name: "大眾傳播學系 辦公室", group: "文學院", building: "傳播館 Q", room: "Q406", targetId: "Q" },
       { name: "事務整備組辦公室", group: "總務處", building: "守謙國際會議中心", room: "HC308", targetId: "HC" },
       { name: "淡江大學校友總會會館", group: "其它單位", building: "守謙國際會議中心", room: "HC301", targetId: "HC" },
       { name: "文書組", group: "總務處", building: "行政大樓", room: "A102", targetId: "A" },
@@ -352,8 +356,6 @@
       { name: "副校長室 (學術/行政/國際)", group: "秘書處/校長室", building: "行政大樓", room: "A402 / A403", targetId: "A" },
       { name: "環境保護及安全衛生中心", group: "總務處", building: "會文館", room: "F101", targetId: "HW" },
       { name: "總務處聯合辦公室 (總務長室/節能與空間組/資產組)", group: "總務處", building: "會文館", room: "F103", targetId: "HW" },
-      { name: "資訊傳播學系 辦公室", group: "文學院", building: "傳播館", room: "O304", targetId: "O" },
-      { name: "大眾傳播學系 辦公室", group: "文學院", building: "傳播館/驚聲大樓", room: "Q406", targetId: "O" },
       { name: "資訊處 校務資訊組", group: "資訊處", building: "驚聲紀念大樓", room: "T107", targetId: "T" },
       { name: "資訊處 網路管理組", group: "資訊處", building: "驚聲紀念大樓", room: "T109", targetId: "T" },
       { name: "文錙藝術中心 主任室", group: "其它單位", building: "驚聲紀念大樓", room: "T212", targetId: "T" },
