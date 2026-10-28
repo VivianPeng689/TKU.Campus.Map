@@ -130,7 +130,7 @@
         <input 
           type="text" 
           id="filter-keyword" 
-          placeholder="例如：L501、TH、K101、健康中心" 
+          placeholder="例如：B304、出納組、L501、TH" 
           class="w-full pl-8 pr-8 py-1.5 sm:py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all shadow-inner"
         />
         <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
@@ -286,7 +286,7 @@
       }, 3000);
     }
 
-    // 1. 校園地標資料集 (已新增 TH、修正 K 座標、分立 O 與 Q 棟)
+    // 1. 校園地標資料集
     const campusPlaces = [
       { id: "A", name: "行政大樓", lat: 25.174879496685257, lng: 121.44905729987109, cat: "admin", color: "#059669", desc: "學校最高行政決策與主要處室大樓（校長室、教務處、研發處等）" },
       { id: "TH", name: "校史館暨張建邦創辦人紀念館", lat: 25.173911215588944, lng: 121.44935892114188, cat: "admin", color: "#0284c7", desc: "淡江校史展覽與張建邦創辦人文物紀念館" },
@@ -315,7 +315,7 @@
       { id: "XC", name: "五虎崗球場", lat: 25.17557149006987, lng: 121.45374270944231, cat: "sport", color: "#16a34a", desc: "排球、籃球戶外綜合球場" },
       { id: "HW", name: "會文館 / 環安中心", lat: 25.175714707884946, lng: 121.4495852855837, cat: "academic", color: "#dc2626", desc: "環安中心 (F101)、總務處聯合辦公室 (F103)" },
       { id: "L", name: "文學館", lat: 25.176230325112066, lng: 121.44938680218506, cat: "academic", color: "#dc2626", desc: "資圖系 (L501)、中文系 (L514)、文學院 (L519)、歷史系 (L523)" },
-      { id: "B", name: "商館 / 商管大樓", lat: 25.1765822988849, lng: 121.4500734475651, cat: "academic", color: "#dc2626", desc: "學務處（生輔組/諮商中心）、商管學院各系辦公室（B8~B11）" },
+      { id: "B", name: "商館 / 商管大樓", lat: 25.1765822988849, lng: 121.4500734475651, cat: "academic", color: "#dc2626", desc: "總務處出納組 (B304)、學務處（生輔組/諮商中心）、商管學院各系辦公室（B8~B11）" },
       { id: "BUS27", name: "紅27公車站", lat: 25.176575185036917, lng: 121.44828350788619, cat: "life", color: "#0284c7", desc: "前往淡水捷運站之主要公車發車乘車處" },
       { id: "SG", name: "紹謨紀念體育館", lat: 25.176303147356244, lng: 121.44858482167012, cat: "sport", color: "#16a34a", desc: "室內羽球/籃球場、課外活動輔導組 (SG211)" },
       { id: "BUS28", name: "紅28公車站", lat: 25.174715780941035, lng: 121.44867511038852, cat: "life", color: "#0284c7", desc: "往返淡水捷運站校內公車停靠站點" },
@@ -331,8 +331,9 @@
       { id: "JS_SQUARE", name: "驚聲廣場", lat: 25.173818997388533, lng: 121.44742518952371, cat: "life", color: "#8b5cf6", desc: "校園綠意休憩廣場" }
     ];
 
-    // 2. 處室與系所資料庫 (大傳系指向 Q, 資傳系指向 O)
+    // 2. 處室與系所資料庫 (已新增出納組)
     const campusOffices = [
+      { name: "出納組 (總務處)", group: "總務處", building: "商館", room: "B304", targetId: "B" },
       { name: "資訊與圖書館學系 辦公室", group: "文學院", building: "文學館", room: "L501", targetId: "L" },
       { name: "中國文學學系 辦公室", group: "文學院", building: "文學館", room: "L514", targetId: "L" },
       { name: "文學院 辦公室", group: "文學院", building: "文學館", room: "L519", targetId: "L" },
