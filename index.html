@@ -288,7 +288,7 @@
 
     // 1. 校園地標資料集
     const campusPlaces = [
-       { id: "A", name: "行政大樓", lat: 25.174879496685257, lng: 121.44905729987109, cat: "admin", color: "#059669", desc: "學校最高行政決策與主要處室大樓（校長室、教務處、研發處等）" },
+      { id: "A", name: "行政大樓", lat: 25.174879496685257, lng: 121.44905729987109, cat: "admin", color: "#059669", desc: "學校最高行政決策與主要處室大樓（校長室、教務處、研發處等）" },
       { id: "TH", name: "校史館暨張建邦創辦人紀念館", lat: 25.173911215588944, lng: 121.44935892114188, cat: "admin", color: "#0284c7", desc: "淡江校史展覽與張建邦創辦人文物紀念館" },
       { id: "H", name: "宮燈教室", lat: 25.17448723069087, lng: 121.44939660812109, cat: "academic", color: "#dc2626", desc: "特色中國傳統式瓦舍教室區" },
       { id: "V", name: "視聽教育館", lat: 25.17499312092134, lng: 121.4494349008392, cat: "academic", color: "#dc2626", desc: "語言教學與視聽教育發展專屬大樓" },
@@ -331,7 +331,7 @@
       { id: "JS_SQUARE", name: "驚聲廣場", lat: 25.173818997388533, lng: 121.44742518952371, cat: "life", color: "#8b5cf6", desc: "驚聲紀念廣場" }
     ];
 
-    // 2. 處室與系所資料庫
+    // 2. 處室與系所資料庫 (已新增出納組)
     const campusOffices = [
       { name: "出納組 (總務處)", group: "總務處", building: "商館", room: "B304", targetId: "B" },
       { name: "資訊與圖書館學系 辦公室", group: "文學院", building: "文學館", room: "L501", targetId: "L" },
@@ -519,7 +519,7 @@
               <i class="fa-solid fa-crosshairs text-amber-600"></i>
               查詢目標：${highlightedOffice.name}
             </div>
-            <div class="text-slate-700 mt-0.5">位置：<span class="font-bold text-red-600 font-mono">${highlightedOffice.room}</span> (${highlightedOffice.group})</div>
+            <div class="text-slate-700 mt-0.5">位置：<span class="font-bold text-red-600 font-mono">highlightedOffice.room</span>({highlightedOffice.group})</div>
           </div>
         `;
       }
@@ -557,7 +557,7 @@
           </div>
           <p class="text-[11px] sm:text-xs text-slate-600 mb-1.5 leading-relaxed">${place.desc}</p>
           ${officesListHtml}
-          <button onclick="startNavigation(${place.lat}, ${place.lng}, '${place.name}')" 
+          <button onclick="startNavigation(${place.lat}, place.lng,'{place.name}')" 
                   class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1.5 px-2 rounded-xl font-bold transition flex items-center justify-center gap-1 shadow-sm active:scale-95">
             <i class="fa-solid fa-person-walking text-xs"></i> 步行前往此處
           </button>
@@ -750,7 +750,7 @@
           item.className = "p-2 hover:bg-slate-100 rounded-xl cursor-pointer flex items-center justify-between transition";
           item.innerHTML = `
             <div class="flex items-center gap-2">
-              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0" style="background-color:${place.color};">${place.id}</span>
+              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0" style="background-color:place.color;">{place.id}</span>
               <span class="font-bold text-slate-800 text-xs">${place.name}</span>
             </div>
             <span class="text-[10px] text-slate-400 font-mono">前往地號</span>
@@ -852,11 +852,6 @@
 
           statusBadge.className = "text-[10px] sm:text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1";
           statusBadge.innerHTML = '<i class="fa-solid fa-location-dot"></i> GPS 已連線';
-
-          // 若正在導航中，自動更新走過的路段為灰色
-          if (typeof updateProgressPolyline === 'function') {
-            updateProgressPolyline();
-          }
         },
         (err) => {
           statusBadge.className = "text-[10px] sm:text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-1";
@@ -913,11 +908,8 @@
       }
     }
 
-    // 7. 站內步行導航（含走過路段變灰色機制）
+    // 7. 站內步行導航
     let routingControl = null;
-    let fullRouteCoords = []; // 完整導航路線節點
-    let passedPolyline = null; // 已走過路段 (灰色)
-    let remainingPolyline = null; // 剩餘未走路段 (藍色)
 
     function startNavigation(destLat, destLng, destName) {
       map.closePopup();
@@ -931,87 +923,10 @@
       runRouting(destLat, destLng, destName);
     }
 
-    // 計算點到線段的最短距離與投影點
-    function getClosestPointOnSegment(p, p1, p2) {
-      const x = p.lng, y = p.lat;
-      const x1 = p1.lng, y1 = p1.lat;
-      const x2 = p2.lng, y2 = p2.lat;
-
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-
-      if (dx === 0 && dy === 0) {
-        return { point: L.latLng(y1, x1), distSq: (x - x1) ** 2 + (y - y1) ** 2, t: 0 };
-      }
-
-      let t = ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy);
-      t = Math.max(0, Math.min(1, t));
-
-      const projX = x1 + t * dx;
-      const projY = y1 + t * dy;
-
-      return {
-        point: L.latLng(projY, projX),
-        distSq: (x - projX) ** 2 + (y - projY) ** 2,
-        t: t
-      };
-    }
-
-    // 動態切割並更新已走/未走路線顏色
-    function updateProgressPolyline() {
-      if (!userLatLng || fullRouteCoords.length < 2) return;
-
-      const currentPoint = L.latLng(userLatLng[0], userLatLng[1]);
-      let minDistSq = Infinity;
-      let closestSegIndex = 0;
-      let closestProjectedPoint = fullRouteCoords[0];
-
-      // 找出當前位置在折線上的最近投影段
-      for (let i = 0; i < fullRouteCoords.length - 1; i++) {
-        const segRes = getClosestPointOnSegment(currentPoint, fullRouteCoords[i], fullRouteCoords[i + 1]);
-        if (segRes.distSq < minDistSq) {
-          minDistSq = segRes.distSq;
-          closestSegIndex = i;
-          closestProjectedPoint = segRes.point;
-        }
-      }
-
-      // 切割出已走過 (Passed) 與未走過 (Remaining) 的座標點數組
-      const passedPoints = fullRouteCoords.slice(0, closestSegIndex + 1);
-      passedPoints.push(closestProjectedPoint);
-
-      const remainingPoints = [closestProjectedPoint, ...fullRouteCoords.slice(closestSegIndex + 1)];
-
-      // 更新或創建已走過路段（灰色）
-      if (!passedPolyline) {
-        passedPolyline = L.polyline(passedPoints, {
-          color: '#94a3b8', // 灰色
-          weight: 6,
-          opacity: 0.75,
-          lineCap: 'round',
-          lineJoin: 'round'
-        }).addTo(map);
-      } else {
-        passedPolyline.setLatLngs(passedPoints);
-      }
-
-      // 更新或創建未走過路段（藍色）
-      if (!remainingPolyline) {
-        remainingPolyline = L.polyline(remainingPoints, {
-          color: '#2563eb', // 藍色
-          weight: 6,
-          opacity: 0.9,
-          lineCap: 'round',
-          lineJoin: 'round'
-        }).addTo(map);
-      } else {
-        remainingPolyline.setLatLngs(remainingPoints);
-      }
-    }
-
     function runRouting(destLat, destLng, destName) {
-      // 重設舊導航圖層
-      cancelNavigationLayers();
+      if (routingControl) {
+        map.removeControl(routingControl);
+      }
 
       const navBanner = document.getElementById('nav-banner');
       navBanner.classList.remove('hidden');
@@ -1022,7 +937,7 @@
       
       const gmapsBtn = document.getElementById('nav-gmaps-btn');
       gmapsBtn.onclick = () => {
-        window.open(`https://www.google.com/maps/dir/?api=1&origin=${userLatLng[0]},${userLatLng[1]}&destination=${destLat},${destLng}&travelmode=walking`, '_blank');
+        window.open(`https://www.google.com/maps/dir/?api=1&origin=userLatLng[0],{userLatLng[1]}&destination=destLat,{destLng}&travelmode=walking`, '_blank');
       };
 
       routingControl = L.Routing.control({
@@ -1035,7 +950,9 @@
           profile: 'foot'
         }),
         lineOptions: {
-          styles: [{ color: 'transparent', opacity: 0 }] // 隱藏原本自動畫出的藍線，改由自訂的變色圖層繪製
+          styles: [
+            { color: '#2563eb', opacity: 0.9, weight: 6 }
+          ]
         },
         addWaypoints: false,
         draggableWaypoints: false,
@@ -1057,10 +974,6 @@
           const firstStep = routes[0].instructions[0].text;
           document.getElementById('nav-step').innerText = firstStep || "沿著步道前進";
         }
-
-        // 記錄完整路線座標，並初始化雙色路線圖層
-        fullRouteCoords = routes[0].coordinates.map(c => L.latLng(c.lat, c.lng));
-        updateProgressPolyline();
       });
 
       routingControl.on('routingerror', function() {
@@ -1069,34 +982,14 @@
         document.getElementById('nav-distance').innerText = `約 ${directDist} 公尺 (直線)`;
         document.getElementById('nav-time').innerText = `(步程約 ${directMin} 分鐘)`;
         document.getElementById('nav-step').innerText = "請參考 Google Maps 路線";
-
-        // 若路由失敗，劃設直線備用
-        fullRouteCoords = [
-          L.latLng(userLatLng[0], userLatLng[1]),
-          L.latLng(destLat, destLng)
-        ];
-        updateProgressPolyline();
       });
     }
 
-    function cancelNavigationLayers() {
+    function cancelNavigation() {
       if (routingControl) {
         map.removeControl(routingControl);
         routingControl = null;
       }
-      if (passedPolyline) {
-        map.removeLayer(passedPolyline);
-        passedPolyline = null;
-      }
-      if (remainingPolyline) {
-        map.removeLayer(remainingPolyline);
-        remainingPolyline = null;
-      }
-      fullRouteCoords = [];
-    }
-
-    function cancelNavigation() {
-      cancelNavigationLayers();
       const navBanner = document.getElementById('nav-banner');
       navBanner.classList.add('hidden');
       navBanner.classList.remove('flex');
