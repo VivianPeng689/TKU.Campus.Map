@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>淡江大學校園互動導覽地圖</title>
   
+  <!-- 瀏覽器分頁圖標 (Favicon) 設定：請將 href 的路徑指向你的圖標圖片（如 favicon.png、logo.png） -->
+  <link rel="icon" type="image/png" href="favicon.png" />
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -115,8 +118,9 @@
       <!-- 標題與標籤 -->
       <div class="flex items-center justify-between mb-1">
         <h1 class="text-sm sm:text-base font-black text-slate-800 flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 bg-red-600 rounded-full animate-ping shrink-0"></span>
-          搜尋與篩選
+          <!-- 這裡將紅點改成你的可愛圖標標誌，並加上微弱的呼吸動畫 -->
+          <img src="favicon.png" alt="Logo" class="w-6 h-6 rounded-full shrink-0 animate-pulse border border-slate-200" />
+          淡江不麋鹿
         </h1>
         <span id="gps-status-badge" class="text-[10px] sm:text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0">
           <i class="fa-solid fa-satellite-dish text-[9px] animate-pulse"></i>
@@ -266,7 +270,8 @@
 
   <!-- Toast 訊息提示器 -->
   <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-30 bg-slate-900/90 backdrop-blur text-white text-xs px-3.5 py-2 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none transform -translate-y-2 flex items-center gap-2">
-    <i id="toast-icon" class="fa-solid fa-circle-info text-blue-400"></i>
+    <!-- toast 圖示改用圖片，使其更有品牌感 -->
+    <img src="favicon.png" alt="Logo" class="w-5 h-5 rounded-full shrink-0" id="toast-logo" />
     <span id="toast-msg">通知訊息</span>
   </div>
 
@@ -274,12 +279,30 @@
   <div id="map"></div>
 
   <script>
+    // 已將顯示 Toast 的圖示邏輯中，可選擇不填 fa 圖示則會顯示我們的 Logo
     function showToast(msg, icon = 'fa-circle-info', color = 'text-blue-400') {
       const toast = document.getElementById('toast');
       const toastMsg = document.getElementById('toast-msg');
-      const toastIcon = document.getElementById('toast-icon');
+      const toastLogo = document.getElementById('toast-logo');
+      
       toastMsg.innerText = msg;
-      toastIcon.className = `fa-solid ${icon} ${color}`;
+      // 如果使用預設通知，就秀可愛麋鹿 logo，如果是錯誤/成功，可以放圖示
+      if (icon === 'fa-triangle-exclamation' || icon === 'fa-circle-check') {
+        toastLogo.style.display = 'none';
+        let customIcon = document.getElementById('toast-custom-icon');
+        if (!customIcon) {
+          customIcon = document.createElement('i');
+          customIcon.id = 'toast-custom-icon';
+          toast.insertBefore(customIcon, toastMsg);
+        }
+        customIcon.className = `fa-solid ${icon} ${color}`;
+        customIcon.style.display = 'inline-block';
+      } else {
+        toastLogo.style.display = 'inline-block';
+        const customIcon = document.getElementById('toast-custom-icon');
+        if (customIcon) customIcon.style.display = 'none';
+      }
+
       toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-2');
       setTimeout(() => {
         toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-2');
