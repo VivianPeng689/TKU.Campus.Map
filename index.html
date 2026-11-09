@@ -667,19 +667,24 @@
       }
 
       let matchedOffices = campusOffices.filter(o => {
-        if (dataType === 'place') return false;
-        if (group !== 'all' && o.group !== group) return false;
-        if (buildingId !== 'all' && o.targetId !== buildingId) return false;
-        if (kw) {
-          const matchKw = o.name.toLowerCase().includes(kw) || 
-                          o.room.toLowerCase().includes(kw) || 
-                          o.group.toLowerCase().includes(kw) || 
-                          o.building.toLowerCase().includes(kw) ||
-                          (kw.includes('健康中心') && o.name.includes('衛生保健'));
-          if (!matchKw) return false;
-        }
-        return true;
-      });
+  if (dataType === 'place') return false;
+  if (group !== 'all' && o.group !== group) return false;
+  if (buildingId !== 'all' && o.targetId !== buildingId) return false;
+  if (kw) {
+    // 提取處室名稱括弧內的文字 (例如從 "生輔組 (失物招領/校安交通)" 抓出 "失物招領/校安交通")
+    const bracketMatch = o.name.match(/\((.*?)\)/);
+    const bracketText = bracketMatch ? bracketMatch[1].toLowerCase() : '';
+
+    const matchKw = o.name.toLowerCase().includes(kw) || 
+                    bracketText.includes(kw) ||
+                    o.room.toLowerCase().includes(kw) || 
+                    o.group.toLowerCase().includes(kw) || 
+                    o.building.toLowerCase().includes(kw) ||
+                    (kw.includes('健康中心') && o.name.includes('衛生保健'));
+    if (!matchKw) return false;
+  }
+  return true;
+});
 
       let matchedPlaces = campusPlaces.filter(p => {
         if (dataType === 'office') return false;
