@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>淡江大學校園互動導覽地圖</title>
-  
+  <title>淡江大學校園互動導覽地圖 | TKU Campus Map</title>
 
   <!-- 瀏覽器分頁圖示 (Favicon) 設定 -->
   <link rel="icon" type="image/png" href="./favicon.png" />
@@ -54,6 +53,11 @@
       margin: 8px 10px !important;
       line-height: 1.4 !important;
       max-width: 82vw !important;
+    }
+
+    /* 調整 Leaflet 右上角控制項位置，避免被語言切換按鈕擋住 */
+    .leaflet-top.leaflet-right {
+      margin-top: 52px !important;
     }
 
     /* 精緻建築代號圓形標籤 (Building Code Badge) */
@@ -113,31 +117,43 @@
 </head>
 <body class="bg-slate-100 font-sans select-none">
 
+  <!-- ======================== 右上角語言切換按鈕 ======================== -->
+  <div class="fixed top-2 sm:top-4 right-2 sm:right-4 z-30">
+    <button 
+      id="lang-toggle-btn" 
+      onclick="toggleLanguage()" 
+      class="bg-white/95 hover:bg-slate-50 backdrop-blur-md text-slate-700 border border-slate-200/90 px-3 py-1.5 sm:py-2 rounded-xl shadow-lg text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+      title="Switch Language / 切換語言"
+    >
+      <i class="fa-solid fa-globe text-blue-600 text-sm"></i>
+      <span id="lang-btn-text">EN</span>
+    </button>
+  </div>
+
   <!-- ======================== 左側/頂部多重篩選控制介面 ======================== -->
-  <div class="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-auto z-20 flex flex-col gap-1.5 sm:w-88 max-w-full">
+  <div class="fixed top-12 sm:top-4 left-2 sm:left-4 right-2 sm:right-auto z-20 flex flex-col gap-1.5 sm:w-88 max-w-full">
     <!-- 主卡片 -->
-    <div class="bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-2xl shadow-xl border border-slate-200/90 transition-all max-h-[85vh] overflow-y-auto custom-scroll">
+    <div class="bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-2xl shadow-xl border border-slate-200/90 transition-all max-h-[82vh] overflow-y-auto custom-scroll">
       
       <!-- 標題與標籤 -->
       <div class="flex items-center justify-between mb-1">
         <h1 class="text-sm sm:text-base font-black text-slate-800 flex items-center gap-1.5">
-          <!-- 這裡將紅點改成你的可愛圖標標誌，並加上微弱的呼吸動畫 -->
           <img src="favicon.png" alt="Logo" class="w-6 h-6 rounded-full shrink-0 animate-pulse border border-slate-200" />
-          淡江不麋鹿
+          <span id="ui-app-title">淡江不麋鹿</span>
         </h1>
         <span id="gps-status-badge" class="text-[10px] sm:text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0">
           <i class="fa-solid fa-satellite-dish text-[9px] animate-pulse"></i>
-          自動定位中
+          <span id="gps-status-text">自動定位中</span>
         </span>
       </div>
-      <p class="text-[10px] sm:text-[11px] text-slate-500 mb-2">景點與辦公室共用同一個查詢介面。</p>
+      <p id="ui-app-subtitle" class="text-[10px] sm:text-[11px] text-slate-500 mb-2">景點與辦公室共用同一個查詢介面。</p>
 
       <!-- 關鍵字搜尋 -->
       <div class="relative">
         <input 
           type="text" 
           id="filter-keyword" 
-          placeholder="例如：B304、出納組、L501、TH" 
+          placeholder="例如：B304、出納組、失物招領、TH" 
           class="w-full pl-8 pr-8 py-1.5 sm:py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all shadow-inner"
         />
         <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
@@ -150,7 +166,7 @@
       <div class="mt-2 pt-1.5 flex items-center justify-between border-t border-slate-100">
         <button id="toggle-filters-btn" onclick="toggleAdvancedFilters()" class="text-xs font-bold text-slate-600 hover:text-red-600 flex items-center gap-1.5 py-0.5 transition">
           <i id="toggle-filter-icon" class="fa-solid fa-sliders text-red-500 text-xs"></i>
-          <span>進階篩選</span>
+          <span id="ui-adv-filter-btn">進階篩選</span>
           <i id="toggle-arrow-icon" class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform"></i>
           <span id="active-filter-indicator" class="hidden text-[10px] bg-red-100 text-red-600 px-1.5 py-0.2 rounded-full font-bold ml-1 animate-pulse">
             ● 已選條件
@@ -165,7 +181,7 @@
         <!-- 篩選列 1: 資料類型 & 景點類別 -->
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">資料類型</label>
+            <label id="ui-label-datatype" class="block font-bold text-slate-700 mb-1">資料類型</label>
             <select id="filter-data-type" class="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all font-medium">
               <option value="all">全部類型</option>
               <option value="office">行政處室/組別</option>
@@ -174,7 +190,7 @@
           </div>
 
           <div>
-            <label class="block font-bold text-slate-700 mb-1">景點類別</label>
+            <label id="ui-label-placecat" class="block font-bold text-slate-700 mb-1">景點類別</label>
             <select id="filter-place-cat" class="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all font-medium">
               <option value="all">全部類別</option>
               <option value="academic">教學學院</option>
@@ -187,7 +203,7 @@
 
         <!-- 篩選列 2: 辦公室學院 / 單位群組 -->
         <div>
-          <label class="block font-bold text-slate-700 mb-1">辦公室學院 / 單位群組</label>
+          <label id="ui-label-group" class="block font-bold text-slate-700 mb-1">辦公室學院 / 單位群組</label>
           <select id="filter-group" class="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all font-medium">
             <option value="all">全部群組</option>
             <option value="教務處">教務處</option>
@@ -209,7 +225,7 @@
 
         <!-- 篩選列 3: 建築物 -->
         <div>
-          <label class="block font-bold text-slate-700 mb-1">建築物</label>
+          <label id="ui-label-building" class="block font-bold text-slate-700 mb-1">建築物</label>
           <select id="filter-building" class="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all font-medium">
             <option value="all">全部建築物</option>
           </select>
@@ -218,7 +234,7 @@
         <!-- 條件重設按鈕 -->
         <div class="pt-1 flex items-center justify-end">
           <button onclick="resetFilters()" class="text-[11px] text-red-600 hover:text-red-700 font-bold flex items-center gap-1 py-1 px-2.5 rounded-lg hover:bg-red-50 transition">
-            <i class="fa-solid fa-rotate-left"></i> 重設所有條件
+            <i class="fa-solid fa-rotate-left"></i> <span id="ui-reset-btn">重設所有條件</span>
           </button>
         </div>
       </div>
@@ -229,10 +245,10 @@
   </div>
 
   <!-- 導航資訊浮動卡 -->
-  <div id="nav-banner" class="fixed bottom-4 sm:bottom-auto sm:top-4 left-3 right-3 sm:left-auto sm:right-4 z-20 bg-white/95 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl shadow-2xl border border-blue-200 sm:max-w-xs hidden flex-col gap-2 transition-all">
+  <div id="nav-banner" class="fixed bottom-4 sm:bottom-auto sm:top-16 left-3 right-3 sm:left-auto sm:right-4 z-20 bg-white/95 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl shadow-2xl border border-blue-200 sm:max-w-xs hidden flex-col gap-2 transition-all">
     <div class="flex items-center justify-between">
       <span class="text-xs font-bold text-blue-600 flex items-center gap-1">
-        <i class="fa-solid fa-person-walking text-sm"></i> 校內步行路徑導引
+        <i class="fa-solid fa-person-walking text-sm"></i> <span id="ui-nav-title">校內步行路徑導引</span>
       </span>
       <button onclick="cancelNavigation()" class="text-slate-400 hover:text-red-500 text-sm px-1">
         <i class="fa-solid fa-xmark"></i>
@@ -253,7 +269,7 @@
       <button id="nav-gmaps-btn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 px-2 rounded-lg font-medium transition text-center flex items-center justify-center gap-1">
         <i class="fa-brands fa-google text-blue-500"></i> Google Maps
       </button>
-      <button onclick="cancelNavigation()" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs py-1.5 px-2 rounded-lg font-medium transition">
+      <button onclick="cancelNavigation()" id="ui-nav-end-btn" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs py-1.5 px-2 rounded-lg font-medium transition">
         結束導航
       </button>
     </div>
@@ -273,7 +289,6 @@
 
   <!-- Toast 訊息提示器 -->
   <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-30 bg-slate-900/90 backdrop-blur text-white text-xs px-3.5 py-2 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none transform -translate-y-2 flex items-center gap-2">
-    <!-- toast 圖示改用圖片，使其更有品牌感 -->
     <img src="favicon.png" alt="Logo" class="w-5 h-5 rounded-full shrink-0" id="toast-logo" />
     <span id="toast-msg">通知訊息</span>
   </div>
@@ -282,14 +297,309 @@
   <div id="map"></div>
 
   <script>
-    // 已將顯示 Toast 的圖示邏輯中，可選擇不填 fa 圖示則會顯示我們的 Logo
+    // ======================== 0. 多語系設定與翻譯字典 ========================
+    let currentLang = 'zh'; // 'zh' | 'en'
+    let gpsState = 'locating'; // 'locating' | 'connected' | 'manual' | 'unsupported'
+
+    const i18n = {
+      zh: {
+        pageTitle: "淡江大學校園互動導覽地圖",
+        appTitle: "淡江不麋鹿",
+        appSubtitle: "景點與辦公室共用同一個查詢介面。",
+        searchPlaceholder: "例如：B304、出納組、失物招領、TH",
+        advFilter: "進階篩選",
+        activeFilters: (n) => `● 已選 ${n} 項`,
+        showAll: "顯示全部項目",
+        matchedCount: (n) => `符合：${n} 項`,
+        noResults: "找不到相符的項目，請嘗試放寬條件",
+        labelDataType: "資料類型",
+        dtAll: "全部類型",
+        dtOffice: "行政處室/組別",
+        dtPlace: "校園建築與景點",
+        labelPlaceCat: "景點類別",
+        catAll: "全部類別",
+        catAcademic: "教學學院",
+        catAdmin: "行政/圖書",
+        catSport: "運動場館",
+        catLife: "生活景觀",
+        labelGroup: "辦公室學院 / 單位群組",
+        grpAll: "全部群組",
+        labelBuilding: "建築物",
+        bldAll: "全部建築物",
+        resetBtn: "重設所有條件",
+        resOfficesTitle: (n) => `行政處室 / 學術系所 (${n})`,
+        resPlacesTitle: (n) => `校園建築與景點 (${n})`,
+        locatedAt: "位於：",
+        goToPlace: "前往地號",
+        popupTarget: "查詢目標：",
+        popupLocation: "位置：",
+        popupOfficesHeader: (n) => `🏢 進駐處室 / 系所 (${n})`,
+        popupWalkBtn: "步行前往此處",
+        navTitle: "校內步行路徑導引",
+        navDest: (name) => `目的地：${name}`,
+        navPlanning: "規劃中...",
+        navMeters: (m) => `${m} 公尺`,
+        navApproxMeters: (m) => `約 ${m} 公尺 (直線)`,
+        navTime: (min) => `(步行約 ${min} 分鐘)`,
+        navDefaultStep: "沿著步道前進",
+        navFallbackStep: "請參考 Google Maps 路線",
+        navEndBtn: "結束導航",
+        gpsLocating: "自動定位中",
+        gpsConnected: "GPS 已連線",
+        gpsManual: "點擊手動定位",
+        gpsUnsupported: "不支援 GPS",
+        myLocationTooltip: "我的目前位置",
+        locateBtnTitle: "回到我的目前位置",
+        toastReset: "已重設所有搜尋與篩選條件",
+        toastUnsupported: "裝置不支援定位功能，已預設顯示淡江校園",
+        toastAutoCentered: "已自動為您定位並置中",
+        toastNeedPerm: "若需即時定位，請允許瀏覽器位置存取權限",
+        toastRecentered: "已置中至目前位置",
+        toastLocated: "已成功定位",
+        toastGpsError: "無法取得定位，請檢查手機 GPS 是否已開啟",
+        toastFindingOrigin: "正在確認起點座標...",
+        toastLangSwitched: "已切換至繁體中文介面"
+      },
+      en: {
+        pageTitle: "TKU Campus Interactive Map",
+        appTitle: "TKU Navigator",
+        appSubtitle: "Unified search for campus landmarks and offices.",
+        searchPlaceholder: "e.g., B304, Cashier, Lost & Found, TH",
+        advFilter: "Filters",
+        activeFilters: (n) => `● ${n} Active`,
+        showAll: "Showing all items",
+        matchedCount: (n) => `Matched: ${n}`,
+        noResults: "No matching items found. Try broader keywords.",
+        labelDataType: "Category",
+        dtAll: "All Types",
+        dtOffice: "Offices & Depts",
+        dtPlace: "Buildings & Landmarks",
+        labelPlaceCat: "Landmark Type",
+        catAll: "All Categories",
+        catAcademic: "Academic",
+        catAdmin: "Admin / Library",
+        catSport: "Sports",
+        catLife: "Campus Life",
+        labelGroup: "College / Admin Unit",
+        grpAll: "All Units",
+        labelBuilding: "Building",
+        bldAll: "All Buildings",
+        resetBtn: "Reset All Filters",
+        resOfficesTitle: (n) => `Offices & Departments (${n})`,
+        resPlacesTitle: (n) => `Buildings & Landmarks (${n})`,
+        locatedAt: "Location: ",
+        goToPlace: "View",
+        popupTarget: "Target: ",
+        popupLocation: "Room: ",
+        popupOfficesHeader: (n) => `🏢 Offices / Departments (${n})`,
+        popupWalkBtn: "Walk Here",
+        navTitle: "Campus Walking Guide",
+        navDest: (name) => `To: ${name}`,
+        navPlanning: "Routing...",
+        navMeters: (m) => `${m} m`,
+        navApproxMeters: (m) => `~${m} m (Direct)`,
+        navTime: (min) => `(~${min} min walk)`,
+        navDefaultStep: "Follow campus walkway",
+        navFallbackStep: "Refer to Google Maps for route",
+        navEndBtn: "End Route",
+        gpsLocating: "Locating...",
+        gpsConnected: "GPS Connected",
+        gpsManual: "Tap to Locate",
+        gpsUnsupported: "No GPS",
+        myLocationTooltip: "My Current Location",
+        locateBtnTitle: "Center on my location",
+        toastReset: "All search and filter conditions reset",
+        toastUnsupported: "Geolocation not supported; showing TKU campus",
+        toastAutoCentered: "Location found and centered",
+        toastNeedPerm: "Please allow location access for live GPS",
+        toastRecentered: "Centered on current location",
+        toastLocated: "Location acquired",
+        toastGpsError: "Unable to get location; check GPS settings",
+        toastFindingOrigin: "Acquiring starting coordinates...",
+        toastLangSwitched: "Switched to English interface"
+      }
+    };
+
+    const groupTranslations = {
+      "教務處": "Office of Academic Affairs",
+      "學務處": "Office of Student Affairs",
+      "總務處": "Office of General Affairs",
+      "秘書處/校長室": "Secretariat / President's Office",
+      "國際處/國際學院": "OIA / College of Int'l Affairs",
+      "資訊處": "Office of Information Services",
+      "圖書館": "University Library",
+      "文學院": "College of Liberal Arts",
+      "外語學院": "College of Foreign Languages",
+      "理學院": "College of Science",
+      "工學院": "College of Engineering",
+      "商管學院": "College of Business & Management",
+      "教育學院": "College of Education",
+      "其它單位": "Other Units"
+    };
+
+    // 1. 校園地標資料集 (中英雙語)
+    const campusPlaces = [
+      { id: "A", name: "行政大樓", nameEn: "Administration Building", lat: 25.174879496685257, lng: 121.44905729987109, cat: "admin", color: "#059669", desc: "學校最高行政決策與主要處室大樓（校長室、教務處、研發處等）", descEn: "Main administrative building (President's Office, Academic Affairs, R&D, etc.)" },
+      { id: "TH", name: "校史館暨張建邦創辦人紀念館", nameEn: "University History & Founder Clement C.P. Chang Memorial Hall", lat: 25.173911215588944, lng: 121.44935892114188, cat: "admin", color: "#0284c7", desc: "淡江校史展覽與張建邦創辦人文物紀念館", descEn: "TKU history exhibition and memorial hall for Founder Dr. Clement C.P. Chang" },
+      { id: "H", name: "宮燈教室", nameEn: "Palace-style Classrooms", lat: 25.174323172470597, lng: 121.44875657885967, cat: "academic", color: "#dc2626", desc: "特色中國傳統式瓦舍教室區", descEn: "Iconic traditional Chinese palace-style tiled classroom complex" },
+      { id: "V", name: "視聽教育館", nameEn: "Audio-Visual Building", lat: 25.17499312092134, lng: 121.4494349008392, cat: "academic", color: "#dc2626", desc: "語言教學與視聽教育發展專屬大樓", descEn: "Dedicated building for language instruction and audio-visual media education" },
+      { id: "QP", name: "覺軒會館", nameEn: "Chueh-Hsuan Hall (QP Terrace)", lat: 25.173725414003933, lng: 121.4480888307921, cat: "life", color: "#d97706", desc: "QP Terrace，景觀花園餐廳與典雅會館", descEn: "QP Terrace garden restaurant and elegant campus guesthouse" },
+      { id: "RT", name: "網球場", nameEn: "Tennis Courts", lat: 25.175146690188537, lng: 121.44980790901334, cat: "sport", color: "#16a34a", desc: "校內網球活動場地", descEn: "On-campus outdoor tennis courts" },
+      { id: "POST", name: "淡江郵局", nameEn: "Tamkang Post Office", lat: 25.17464421134901, lng: 121.45027461328878, cat: "life", color: "#16a34a", desc: "淡江校內郵務與儲匯服務", descEn: "On-campus postal and banking services" },
+      { id: "R", name: "學生活動中心", nameEn: "Student Activity Center", lat: 25.17478743024776, lng: 121.45037385501142, cat: "sport", color: "#ea580c", desc: "室內活動場所與羽球場", descEn: "Indoor student event venue and badminton courts" },
+      { id: "SQ", name: "書卷廣場", nameEn: "Scroll Plaza", lat: 25.17553993356438, lng: 121.45063402925842, cat: "life", color: "#8b5cf6", desc: "淡江校園核心地標廣場", descEn: "Central landmark plaza of Tamkang University" },
+      { id: "U", name: "覺生紀念圖書館", nameEn: "Chueh-Sheng Memorial Library", lat: 25.17475101868242, lng: 121.45105513602745, cat: "admin", color: "#0284c7", desc: "總圖書館（採編組、典藏閱覽組、參考服務組、館長室）", descEn: "Main University Library (Acquisitions, Circulation, Reference Services)" },
+      { id: "I", name: "覺生綜合大樓", nameEn: "Chueh-Sheng General Building", lat: 25.174384409394097, lng: 121.45092182016924, cat: "academic", color: "#0284c7", desc: "遠距教學中心 (I101)、品保處/IR中心 (I801)、覺生國際會議廳 (I1001)", descEn: "Distance Education Center (I101), QA & IR Office (I801), Int'l Conference Hall (I1001)" },
+      { id: "FL", name: "外國語文大樓", nameEn: "Foreign Languages Building", lat: 25.17488210027984, lng: 121.45164253975626, cat: "academic", color: "#dc2626", desc: "外語學院院辦 (FL410)、英文系 (FL207)、日文系 (FL317)、歐語系 (FL413)", descEn: "College of Foreign Languages (FL410), English (FL207), Japanese (FL317), European Languages (FL413)" },
+      { id: "Z", name: "文錙藝術中心", nameEn: "Carrie Chang Fine Arts Center", lat: 25.17504959322785, lng: 121.45222189698671, cat: "life", color: "#9333ea", desc: "藝術文化展示與書法典藏展覽廳", descEn: "Fine arts gallery and calligraphy exhibition center" },
+      { id: "MC", name: "文錙音樂廳", nameEn: "Carrie Chang Music Hall", lat: 25.17561479953073, lng: 121.4511518404264, cat: "life", color: "#9333ea", desc: "音樂演奏、藝文發表與音樂文化推廣展演空間", descEn: "Concert hall for musical performances and cultural events" },
+      { id: "FD", name: "美食廣場", nameEn: "Food Court", lat: 25.17500668977156, lng: 121.4521207165776, cat: "life", color: "#d97706", desc: "校內餐飲與學生用餐生活商場", descEn: "On-campus student dining and food court" },
+      { id: "Z123", name: "松濤1、2、3館", nameEn: "Sung-Tao Dormitories 1, 2 & 3", lat: 25.174980497589033, lng: 121.4524032429072, cat: "life", color: "#e11d48", desc: "學生宿舍區、住宿輔導組（松濤二館二樓大廳 Z200）", descEn: "Student dormitories & Student Housing Guidance Section (Z200)" },
+      { id: "Z45", name: "松濤4、5館", nameEn: "Sung-Tao Dormitories 4 & 5", lat: 25.17531418306515, lng: 121.45250621112069, cat: "life", color: "#e11d48", desc: "學生宿舍區", descEn: "Student dormitory complex" },
+      { id: "T", name: "驚聲紀念大樓", nameEn: "Ching-Sheng Memorial Building", lat: 25.17549138511537, lng: 121.45133140359606, cat: "academic", color: "#dc2626", desc: "國際處 (T1002)、外交系全英班 (T802)、國觀系 (T806)、國務學院 (T902)、全政經系 (T1102)", descEn: "OIA (T1002), Diplomacy (T802), Int'l Tourism (T806), College of Int'l Affairs (T902), Global Politics (T1102)" },
+      { id: "E", name: "工學大樓", nameEn: "Engineering Building", lat: 25.175972014036386, lng: 121.4518329766833, cat: "academic", color: "#dc2626", desc: "工學院 (E682)、資工 (E646)、電機 (E629)、土木 (E729)、航太 (E788)、機械 (E790)", descEn: "College of Engineering (E682), CSIE (E646), EE (E629), Civil Eng. (E729), Aerospace (E788), Mechanical (E790)" },
+      { id: "G", name: "工學館", nameEn: "Engineering Hall", lat: 25.176113242602668, lng: 121.4510643094358, cat: "academic", color: "#dc2626", desc: "工程實習工廠、安全辦公室 (G101)、財務處 (G401)", descEn: "Engineering workshops, Safety Office (G101), Office of Finance (G401)" },
+      { id: "K", name: "建築館", nameEn: "Architecture Building", lat: 25.176481971793997, lng: 121.45105771091248, cat: "academic", color: "#dc2626", desc: "建築學系系辦公室 (K101)", descEn: "Department of Architecture Office (K101)" },
+      { id: "SN", name: "黑天鵝展示廳", nameEn: "Black Swan Exhibition Hall", lat: 25.176342748545554, lng: 121.45056420144378, cat: "life", color: "#4f46e5", desc: "校園文藝展覽、成果發表與海報特展展廳", descEn: "Campus exhibition hall for art shows, showcases, and poster displays" },
+      { id: "M", name: "海事博物館", nameEn: "Maritime Museum", lat: 25.176231747056615, lng: 121.45043018144673, cat: "life", color: "#0891b2", desc: "衛生保健組（健康中心/下層）、出版中心 (M109)", descEn: "Health Center (Lower Level), University Press (M109)" },
+      { id: "ED", name: "教育大樓", nameEn: "Education Building", lat: 25.17583365135925, lng: 121.45271542347635, cat: "academic", color: "#dc2626", desc: "教育學院院辦 (ED104)、心諮所 (ED103)、教科系 (ED203)、師培中心 (ED304)", descEn: "College of Education (ED104), Counseling Psych (ED103), Educational Tech (ED203), Teacher Education (ED304)" },
+      { id: "XC", name: "五虎崗綜合球場", nameEn: "Wu-Hu-Kang Sports Courts", lat: 25.17557149006987, lng: 121.45374270944231, cat: "sport", color: "#16a34a", desc: "排球、籃球戶外綜合球場", descEn: "Outdoor volleyball and basketball courts" },
+      { id: "F", name: "會文館", nameEn: "Hui-Wen Hall", lat: 25.175714707884946, lng: 121.4495852855837, cat: "academic", color: "#dc2626", desc: "環安中心 (F101)、總務處聯合辦公室 (F103)", descEn: "Environmental Protection & Safety Center (F101), General Affairs Joint Office (F103)" },
+      { id: "L", name: "文學館", nameEn: "Liberal Arts Building", lat: 25.176230325112066, lng: 121.44938680218506, cat: "academic", color: "#dc2626", desc: "資圖系 (L501)、中文系 (L514)、文學院 (L519)、歷史系 (L523)", descEn: "Info & Library Science (L501), Chinese (L514), College of Liberal Arts (L519), History (L523)" },
+      { id: "B", name: "商管大樓", nameEn: "Business and Management Building", lat: 25.1765822988849, lng: 121.4500734475651, cat: "academic", color: "#dc2626", desc: "總務處出納組 (B304)、學務處（生輔組/諮商中心）、商管學院各系辦公室（B8~B11）", descEn: "Cashier Section (B304), Student Affairs (4F), College of Business & Management Depts (8F–11F)" },
+      { id: "BUS27", name: "紅27公車站", nameEn: "Red 27 Bus Stop", lat: 25.17652097531375, lng: 121.44830349036893, cat: "life", color: "#0284c7", desc: "往返淡水捷運站之主要公車發車乘車處", descEn: "Main shuttle bus stop to/from MRT Tamsui Station (Route Red 27)" },
+      { id: "SG", name: "紹謨紀念體育館", nameEn: "Shao-Mo Memorial Gymnasium", lat: 25.176139222851223, lng: 121.44858910092164, cat: "sport", color: "#16a34a", desc: "室內羽球/籃球場、課外活動輔導組 (SG315)", descEn: "Indoor basketball/badminton courts, Extracurricular Activities Section (SG315)" },
+      { id: "BUS28", name: "紅28公車站", nameEn: "Red 28 Bus Stop", lat: 25.174715780941035, lng: 121.44867511038852, cat: "life", color: "#0284c7", desc: "往返淡水捷運站之主要公車發車乘車處", descEn: "Main shuttle bus stop to/from MRT Tamsui Station (Route Red 28)" },
+      { id: "O", name: "傳播館 O", nameEn: "Communication Hall O", lat: 25.175713357457894, lng: 121.4487737409017, cat: "academic", color: "#dc2626", desc: "資傳系辦公室 (O304)", descEn: "Department of Information and Communication Office (O304)" },
+      { id: "Q", name: "傳播館 Q", nameEn: "Communication Hall Q", lat: 25.17561383323428, lng: 121.44909694706205, cat: "academic", color: "#dc2626", desc: "大傳系辦公室 (Q406)", descEn: "Department of Mass Communication Office (Q406)" },
+      { id: "C", name: "鍾靈化學館", nameEn: "Chung-Ling Chemistry Building", lat: 25.175216949445087, lng: 121.44878854583827, cat: "academic", color: "#dc2626", desc: "化學系辦 (C306)、鍾靈分館 (C301)、科教中心 (C434)、尖端材料學程 (C448)", descEn: "Chemistry Dept (C306), Chemistry Library (C301), Science Education Center (C434)" },
+      { id: "S", name: "騮先紀念科學館", nameEn: "Liu-Hsien Memorial Science Building", lat: 25.17549126830538, lng: 121.44818655683316, cat: "academic", color: "#dc2626", desc: "理學院院辦 (S220)、物理系 (S303)、應數與數據科學系 (S401)", descEn: "College of Science (S220), Physics Dept (S303), Applied Math & Data Science (S401)" },
+      { id: "HC", name: "守謙國際會議中心", nameEn: "Hsu Shou-Chlien International Conference Center", lat: 25.17475768873364, lng: 121.44790990466156, cat: "admin", color: "#0284c7", desc: "校友總會會館 (HC301)、事務整備組 (HC308)、AI系辦 (HC303)", descEn: "Alumni Association (HC301), General Maintenance (HC308), Dept of AI (HC303)" },
+      { id: "N", name: "紹謨紀念游泳館", nameEn: "Shao-Mo Memorial Natatorium", lat: 25.174611747711207, lng: 121.44721264698532, cat: "sport", color: "#16a34a", desc: "標準室內溫水游泳池與師生重訓場所", descEn: "Indoor heated swimming pool and fitness center" },
+      { id: "BB", name: "籃球場", nameEn: "Outdoor Basketball Courts", lat: 25.17380672529315, lng: 121.44683142866, cat: "sport", color: "#16a34a", desc: "戶外籃球運動場", descEn: "Outdoor basketball courts" },
+      { id: "TK", name: "操場", nameEn: "Athletic Field & Track", lat: 25.173549254309364, lng: 121.44595519570949, cat: "sport", color: "#16a34a", desc: "標準田徑跑道與運動場", descEn: "Standard athletics track and sports field" },
+      { id: "SS", name: "克難坡", nameEn: "Ke-Nan Slope (132 Steps)", lat: 25.17333791636465, lng: 121.44744532888114, cat: "life", color: "#d97706", desc: "淡江知名 132 階好漢坡，登高精神象徵", descEn: "Famous 132-step stone staircase symbolizing perseverance" },
+      { id: "JSS", name: "驚聲廣場", nameEn: "Ching-Sheng Plaza", lat: 25.173818997388533, lng: 121.44742518952371, cat: "life", color: "#8b5cf6", desc: "驚聲紀念廣場", descEn: "Ching-Sheng Memorial Plaza" }
+    ];
+
+    // 2. 處室與系所資料庫 (中英雙語)
+    const campusOffices = [
+      { name: "出納組 (總務處)", nameEn: "Cashier Section (General Affairs)", group: "總務處", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B304", targetId: "B" },
+      { name: "資訊與圖書館學系 辦公室", nameEn: "Dept. of Information and Library Science", group: "文學院", building: "文學館", buildingEn: "Liberal Arts Bldg", room: "L501", targetId: "L" },
+      { name: "中國文學學系 辦公室", nameEn: "Dept. of Chinese Literature", group: "文學院", building: "文學館", buildingEn: "Liberal Arts Bldg", room: "L514", targetId: "L" },
+      { name: "文學院 辦公室", nameEn: "College of Liberal Arts Office", group: "文學院", building: "文學館", buildingEn: "Liberal Arts Bldg", room: "L519", targetId: "L" },
+      { name: "歷史學系 辦公室", nameEn: "Dept. of History", group: "文學院", building: "文學館", buildingEn: "Liberal Arts Bldg", room: "L523", targetId: "L" },
+      { name: "建築學系 辦公室", nameEn: "Dept. of Architecture", group: "工學院", building: "建築館", buildingEn: "Architecture Bldg", room: "K101", targetId: "K" },
+      { name: "資訊傳播學系 辦公室", nameEn: "Dept. of Information and Communication", group: "文學院", building: "傳播館 O", buildingEn: "Communication Hall O", room: "O304", targetId: "O" },
+      { name: "大眾傳播學系 辦公室", nameEn: "Dept. of Mass Communication", group: "文學院", building: "傳播館 Q", buildingEn: "Communication Hall Q", room: "Q406", targetId: "Q" },
+      { name: "事務整備組辦公室", nameEn: "General Maintenance Section", group: "總務處", building: "守謙國際會議中心", buildingEn: "Hsu Shou-Chlien Int'l Conf. Center", room: "HC308", targetId: "HC" },
+      { name: "淡江大學校友總會會館", nameEn: "TKU Worldwide Alumni Association", group: "其它單位", building: "守謙國際會議中心", buildingEn: "Hsu Shou-Chlien Int'l Conf. Center", room: "HC301", targetId: "HC" },
+      { name: "文書組", nameEn: "Documentation Section", group: "總務處", building: "行政大樓", buildingEn: "Administration Bldg", room: "A102", targetId: "A" },
+      { name: "收發室", nameEn: "Mail & Dispatch Room", group: "總務處", building: "行政大樓", buildingEn: "Administration Bldg", room: "A101", targetId: "A" },
+      { name: "職能福利組", nameEn: "Staff Welfare Section", group: "其它單位", building: "行政大樓", buildingEn: "Administration Bldg", room: "A103", targetId: "A" },
+      { name: "資訊處 (全校網路/帳號諮詢)", nameEn: "Office of Information Services (Network/Account Help)", group: "資訊處", building: "行政大樓", buildingEn: "Administration Bldg", room: "A112", targetId: "A" },
+      { name: "教務長室", nameEn: "Dean of Academic Affairs Office", group: "教務處", building: "行政大樓", buildingEn: "Administration Bldg", room: "A201", targetId: "A" },
+      { name: "教務處 招生組", nameEn: "Admissions Section (Academic Affairs)", group: "教務處", building: "行政大樓", buildingEn: "Administration Bldg", room: "A210", targetId: "A" },
+      { name: "教務處 課務組", nameEn: "Curriculum Section (Academic Affairs)", group: "教務處", building: "行政大樓", buildingEn: "Administration Bldg", room: "A211", targetId: "A" },
+      { name: "教務處 註冊組", nameEn: "Registration Section (Academic Affairs)", group: "教務處", building: "行政大樓", buildingEn: "Administration Bldg", room: "A212", targetId: "A" },
+      { name: "秘書處", nameEn: "Office of the Secretariat", group: "秘書處/校長室", building: "行政大樓", buildingEn: "Administration Bldg", room: "A301", targetId: "A" },
+      { name: "人力資源處 (人事室)", nameEn: "Office of Human Resources", group: "其它單位", building: "行政大樓", buildingEn: "Administration Bldg", room: "A307", targetId: "A" },
+      { name: "校長室", nameEn: "Office of the President", group: "秘書處/校長室", building: "行政大樓", buildingEn: "Administration Bldg", room: "A401", targetId: "A" },
+      { name: "副校長室 (學術/行政/國際)", nameEn: "Vice Presidents' Offices (Academic/Admin/Int'l)", group: "秘書處/校長室", building: "行政大樓", buildingEn: "Administration Bldg", room: "A402 / A403", targetId: "A" },
+      { name: "環境保護及安全衛生中心(環安中心)", nameEn: "Environmental Protection & Safety Center", group: "總務處", building: "會文館", buildingEn: "Hui-Wen Hall", room: "F101", targetId: "F" },
+      { name: "總務處聯合辦公室 (總務長室/節能與空間組/資產組)", nameEn: "General Affairs Joint Office (Energy/Property)", group: "總務處", building: "會文館", buildingEn: "Hui-Wen Hall", room: "F103", targetId: "F" },
+      { name: "資訊處 校務資訊組", nameEn: "Academic Information Section (OIS)", group: "資訊處", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T107", targetId: "T" },
+      { name: "資訊處 網路管理組", nameEn: "Network Management Section (OIS)", group: "資訊處", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T109", targetId: "T" },
+      { name: "文錙藝術中心 主任室", nameEn: "Director's Office, Carrie Chang Fine Arts Center", group: "其它單位", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T212", targetId: "T" },
+      { name: "驚聲國際會議廳", nameEn: "Ching-Sheng International Conference Hall", group: "其它單位", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T301", targetId: "T" },
+      { name: "外交與國際關係學系全英語學士班", nameEn: "Dept. of Diplomacy and International Relations (English Program)", group: "國際處/國際學院", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T802", targetId: "T" },
+      { name: "國際觀光管理學系全英語學士班", nameEn: "Dept. of International Tourism Management (English Program)", group: "國際處/國際學院", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T806", targetId: "T" },
+      { name: "歐洲聯盟研究中心 / 兩岸關係研究中心", nameEn: "EU Research Center / Cross-Strait Relations Center", group: "國際處/國際學院", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T811", targetId: "T" },
+      { name: "國際事務學院 院辦公室", nameEn: "College of International Affairs Office", group: "國際處/國際學院", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T902", targetId: "T" },
+      { name: "國際事務副校長室", nameEn: "Vice President for International Affairs Office", group: "秘書處/校長室", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T1001", targetId: "T" },
+      { name: "國際暨兩岸事務處 (國際交流組/境外生輔導組)", nameEn: "Office of International & Cross-Strait Affairs (OIA)", group: "國際處/國際學院", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T1002", targetId: "T" },
+      { name: "全球政治經濟學系 辦公室", nameEn: "Dept. of Global Politics and Economics", group: "國際處/國際學院", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T1102", targetId: "T" },
+      { name: "全英語教學推動中心", nameEn: "Center for English-Medium Instruction (EMI)", group: "教務處", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T1103", targetId: "T" },
+      { name: "日本研究中心 / 東協研究中心", nameEn: "Center for Japanese Studies / ASEAN Studies", group: "國際處/國際學院", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T1106", targetId: "T" },
+      { name: "國際事務與戰略研究所", nameEn: "Graduate Institute of Int'l Affairs & Strategic Studies", group: "國際處/國際學院", building: "驚聲紀念大樓", buildingEn: "Ching-Sheng Memorial Bldg", room: "T1202", targetId: "T" },
+      { name: "化學學系 辦公室", nameEn: "Dept. of Chemistry", group: "理學院", building: "鍾靈化學館", buildingEn: "Chung-Ling Chemistry Bldg", room: "C306", targetId: "C" },
+      { name: "鍾靈分館 (理學分館圖書館)", nameEn: "Chung-Ling Science Library", group: "圖書館", building: "鍾靈化學館", buildingEn: "Chung-Ling Chemistry Bldg", room: "C301", targetId: "C" },
+      { name: "科學教育中心 辦公室", nameEn: "Center for Science Education", group: "理學院", building: "鍾靈化學館", buildingEn: "Chung-Ling Chemistry Bldg", room: "C434", targetId: "C" },
+      { name: "尖端材料科學學士學位學程", nameEn: "Bachelor's Program in Advanced Material Sciences", group: "理學院", building: "鍾靈化學館", buildingEn: "Chung-Ling Chemistry Bldg", room: "C448", targetId: "C" },
+      { name: "工學院 院長室 / 技正辦公室", nameEn: "College of Engineering Dean's Office", group: "工學院", building: "工學大樓", buildingEn: "Engineering Bldg", room: "E682", targetId: "E" },
+      { name: "資訊工程學系 辦公室", nameEn: "Dept. of Computer Science & Information Engineering (CSIE)", group: "工學院", building: "工學大樓", buildingEn: "Engineering Bldg", room: "E646", targetId: "E" },
+      { name: "電機工程學系 辦公室", nameEn: "Dept. of Electrical and Computer Engineering (ECE)", group: "工學院", building: "工學大樓", buildingEn: "Engineering Bldg", room: "E629", targetId: "E" },
+      { name: "土木工程學系 辦公室", nameEn: "Dept. of Civil Engineering", group: "工學院", building: "工學大樓", buildingEn: "Engineering Bldg", room: "E729", targetId: "E" },
+      { name: "航空太空工程學系 辦公室", nameEn: "Dept. of Aerospace Engineering", group: "工學院", building: "工學大樓", buildingEn: "Engineering Bldg", room: "E788", targetId: "E" },
+      { name: "機械與機電工程學系 辦公室", nameEn: "Dept. of Mechanical and Electro-Mechanical Engineering", group: "工學院", building: "工學大樓", buildingEn: "Engineering Bldg", room: "E790", targetId: "E" },
+      { name: "化學工程與材料工程學系 辦公室", nameEn: "Dept. of Chemical and Materials Engineering", group: "工學院", building: "工學大樓", buildingEn: "Engineering Bldg", room: "E610", targetId: "E" },
+      { name: "水資源及環境工程學系 辦公室", nameEn: "Dept. of Water Resources and Environmental Engineering", group: "工學院", building: "工學大樓", buildingEn: "Engineering Bldg", room: "E718", targetId: "E" },
+      { name: "AI 創智學院院長室", nameEn: "College of Artificial Innovative Intelligence", group: "工學院", building: "工學大樓", buildingEn: "Engineering Bldg", room: "E682", targetId: "E" },
+      { name: "人工智慧學系 (AI系)", nameEn: "Dept. of Artificial Intelligence (AI)", group: "工學院", building: "守謙國際會議中心", buildingEn: "Hsu Shou-Chlien Int'l Conf. Center", room: "HC303", targetId: "HC" },
+      { name: "安全辦公室", nameEn: "Campus Safety Office", group: "總務處", building: "工學館", buildingEn: "Engineering Hall", room: "G101", targetId: "G" },
+      { name: "財務處", nameEn: "Office of Finance", group: "其它單位", building: "工學館", buildingEn: "Engineering Hall", room: "G401", targetId: "G" },
+      { name: "教育心理與諮商研究所", nameEn: "Graduate Institute of Educational Psychology & Counseling", group: "教育學院", building: "教育大樓", buildingEn: "Education Bldg", room: "ED103", targetId: "ED" },
+      { name: "教育學院 院辦公室", nameEn: "College of Education Office", group: "教育學院", building: "教育大樓", buildingEn: "Education Bldg", room: "ED104 / ED105", targetId: "ED" },
+      { name: "教育與未來設計學系", nameEn: "Dept. of Education and Futures Design", group: "教育學院", building: "教育大樓", buildingEn: "Education Bldg", room: "ED106", targetId: "ED" },
+      { name: "教育科技學系 辦公室", nameEn: "Dept. of Educational Technology", group: "教育學院", building: "教育大樓", buildingEn: "Education Bldg", room: "ED203", targetId: "ED" },
+      { name: "師資培育中心 辦公室", nameEn: "Center for Teacher Education", group: "教育學院", building: "教育大樓", buildingEn: "Education Bldg", room: "ED304", targetId: "ED" },
+      { name: "策略遠見研究中心", nameEn: "Center for Strategic Foresight", group: "教育學院", building: "教育大樓", buildingEn: "Education Bldg", room: "ED305", targetId: "ED" },
+      { name: "英文學系 辦公室", nameEn: "Dept. of English", group: "外語學院", building: "外國語文大樓", buildingEn: "Foreign Languages Bldg", room: "FL207", targetId: "FL" },
+      { name: "教學卓越計畫辦公室", nameEn: "Teaching Excellence Program Office", group: "教務處", building: "外國語文大樓", buildingEn: "Foreign Languages Bldg", room: "FL216", targetId: "FL" },
+      { name: "日本語文學系 辦公室", nameEn: "Dept. of Japanese", group: "外語學院", building: "外國語文大樓", buildingEn: "Foreign Languages Bldg", room: "FL317", targetId: "FL" },
+      { name: "外國語文學院 院辦公室", nameEn: "College of Foreign Languages & Literatures Office", group: "外語學院", building: "外國語文大樓", buildingEn: "Foreign Languages Bldg", room: "FL410", targetId: "FL" },
+      { name: "歐洲語文學系 (西文組/法文組/德文組/俄文組)", nameEn: "Dept. of European Languages (Spanish/French/German/Russian)", group: "外語學院", building: "外國語文大樓", buildingEn: "Foreign Languages Bldg", room: "FL413", targetId: "FL" },
+      { name: "採編組 辦公室", nameEn: "Acquisitions & Cataloging Section (Library)", group: "圖書館", building: "覺生紀念圖書館", buildingEn: "Chueh-Sheng Memorial Library", room: "U101", targetId: "U" },
+      { name: "典藏閱覽組", nameEn: "Circulation & Collection Section (Library)", group: "圖書館", building: "覺生紀念圖書館", buildingEn: "Chueh-Sheng Memorial Library", room: "U201", targetId: "U" },
+      { name: "數位資訊組 辦公室", nameEn: "Digital Information Section (Library)", group: "圖書館", building: "覺生紀念圖書館", buildingEn: "Chueh-Sheng Memorial Library", room: "U202", targetId: "U" },
+      { name: "參考服務組 (參考諮詢櫃台)", nameEn: "Reference Services Desk (Library)", group: "圖書館", building: "覺生紀念圖書館", buildingEn: "Chueh-Sheng Memorial Library", room: "U301", targetId: "U" },
+      { name: "多媒體資源室 / 非書資料組", nameEn: "Multimedia & Non-book Materials Center (Library)", group: "圖書館", building: "覺生紀念圖書館", buildingEn: "Chueh-Sheng Memorial Library", room: "U501", targetId: "U" },
+      { name: "館長室", nameEn: "University Librarian's Office", group: "圖書館", building: "覺生紀念圖書館", buildingEn: "Chueh-Sheng Memorial Library", room: "U801", targetId: "U" },
+      { name: "圖書館 秘書辦公室", nameEn: "Library Secretariat Office", group: "圖書館", building: "覺生紀念圖書館", buildingEn: "Chueh-Sheng Memorial Library", room: "U802", targetId: "U" },
+      { name: "遠距教學發展中心 (iClass/數位教材)", nameEn: "Center for Distance Education Development (iClass)", group: "教務處", building: "覺生綜合大樓", buildingEn: "Chueh-Sheng General Bldg", room: "I101", targetId: "I" },
+      { name: "品質保證稽核處 及 校務研究中心", nameEn: "Office of Quality Assurance & Institutional Research", group: "其它單位", building: "覺生綜合大樓", buildingEn: "Chueh-Sheng General Bldg", room: "I801", targetId: "I" },
+      { name: "覺生國際會議廳", nameEn: "Chueh-Sheng International Conference Hall", group: "其它單位", building: "覺生綜合大樓", buildingEn: "Chueh-Sheng General Bldg", room: "I1001", targetId: "I" },
+      { name: "理學院 院辦公室", nameEn: "College of Science Office", group: "理學院", building: "騮先紀念科學館", buildingEn: "Liu-Hsien Science Bldg", room: "S220", targetId: "S" },
+      { name: "物理學系 辦公室", nameEn: "Dept. of Physics", group: "理學院", building: "騮先紀念科學館", buildingEn: "Liu-Hsien Science Bldg", room: "S303", targetId: "S" },
+      { name: "應用數學與數據科學學系", nameEn: "Dept. of Applied Mathematics and Data Science", group: "理學院", building: "騮先紀念科學館", buildingEn: "Liu-Hsien Science Bldg", room: "S401", targetId: "S" },
+      { name: "出版中心 辦公室", nameEn: "University Press Office", group: "其它單位", building: "海事博物館", buildingEn: "Maritime Museum", room: "M109", targetId: "M" },
+      { name: "生輔組 (就貸/兵役/弱勢助學/校外獎學金)", nameEn: "Student Assistance Section (Loans/Military Service/Grants)", group: "學務處", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B402", targetId: "B" },
+      { name: "生輔組 (學雜費減免/校內獎學金)", nameEn: "Student Assistance Section (Tuition Waiver/Scholarships)", group: "學務處", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B421", targetId: "B" },
+      { name: "生輔組 (失物招領/校安交通)", nameEn: "Student Assistance Section (Lost & Found/Campus Security)", group: "學務處", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B401", targetId: "B" },
+      { name: "軍訓室", nameEn: "Military Training Office", group: "其它單位", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B415", targetId: "B" },
+      { name: "學務處 聯合服務櫃台(請假/團保代收)", nameEn: "Student Affairs Joint Service Counter (Leave/Insurance)", group: "學務處", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B418", targetId: "B" },
+      { name: "課外活動輔導組 (課外組)", nameEn: "Extracurricular Activities Guidance Section", group: "學務處", building: "紹謨紀念體育館", buildingEn: "Shao-Mo Gymnasium", room: "SG315", targetId: "SG" },
+      { name: "衛生保健組 (衛保組/健康中心)", nameEn: "Health Center / Sanitary Section", group: "學務處", building: "海事博物館下層", buildingEn: "Maritime Museum (Lower Level)", room: "M111", targetId: "M" },
+      { name: "住宿輔導組 (住輔組)", nameEn: "Student Housing Guidance Section", group: "學務處", building: "松濤館二館", buildingEn: "Sung-Tao Dormitory 2", room: "2F Lobby (Z200)", targetId: "Z123" },
+      { name: "諮商職涯暨學習發展輔導中心(諮輔中心)", nameEn: "Counseling, Career & Learning Development Center", group: "學務處", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B408 / B413", targetId: "B" },
+      { name: "原住民族學生資源中心(原資中心)", nameEn: "Indigenous Students Resource Center", group: "學務處", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B423", targetId: "B" },
+      { name: "商管學院辦公室", nameEn: "College of Business and Management Office", group: "商管學院", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B1001", targetId: "B" },
+      { name: "國際企業學系 (國企系)", nameEn: "Dept. of International Business", group: "商管學院", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B1012", targetId: "B" },
+      { name: "財務金融學系 (金管系/財金系)", nameEn: "Dept. of Banking and Finance", group: "商管學院", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B1104 / B1102", targetId: "B" },
+      { name: "會計學系 (會計系)", nameEn: "Dept. of Accounting", group: "商管學院", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B1003", targetId: "B" },
+      { name: "產業經濟學系 (產經系)", nameEn: "Dept. of Industrial Economics", group: "商管學院", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B1111", targetId: "B" },
+      { name: "經濟學系 (經濟系)", nameEn: "Dept. of Economics", group: "商管學院", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B1109", targetId: "B" },
+      { name: "企業管理學系 (企管系)", nameEn: "Dept. of Business Administration", group: "商管學院", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B912", targetId: "B" },
+      { name: "風險管理與保險學系 (保險系)", nameEn: "Dept. of Risk Management and Insurance", group: "商管學院", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B1107", targetId: "B" },
+      { name: "資訊管理學系 (資管系)", nameEn: "Dept. of Information Management", group: "商管學院", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B927", targetId: "B" },
+      { name: "公共行政學系 (公行系)", nameEn: "Dept. of Public Administration", group: "商管學院", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B811", targetId: "B" },
+      { name: "管理科學學系 (管科學系)", nameEn: "Dept. of Management Sciences", group: "商管學院", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B1014", targetId: "B" },
+      { name: "統計學系 (統計系)", nameEn: "Dept. of Statistics", group: "商管學院", building: "商管大樓", buildingEn: "Business & Management Bldg", room: "B1113", targetId: "B" }
+    ];
+
+    // 雙語欄位取值輔助函式
+    function getPlaceName(p) { return currentLang === 'en' ? (p.nameEn || p.name) : p.name; }
+    function getPlaceDesc(p) { return currentLang === 'en' ? (p.descEn || p.desc) : p.desc; }
+    function getOfficeName(o) { return currentLang === 'en' ? (o.nameEn || o.name) : o.name; }
+    function getOfficeBuilding(o) { return currentLang === 'en' ? (o.buildingEn || o.building) : o.building; }
+    function getGroupName(g) { return currentLang === 'en' ? (groupTranslations[g] || g) : g; }
+
     function showToast(msg, icon = 'fa-circle-info', color = 'text-blue-400') {
       const toast = document.getElementById('toast');
       const toastMsg = document.getElementById('toast-msg');
       const toastLogo = document.getElementById('toast-logo');
       
       toastMsg.innerText = msg;
-      // 如果使用預設通知，就秀可愛麋鹿 logo，如果是錯誤/成功，可以放圖示
       if (icon === 'fa-triangle-exclamation' || icon === 'fa-circle-check') {
         toastLogo.style.display = 'none';
         let customIcon = document.getElementById('toast-custom-icon');
@@ -312,156 +622,6 @@
       }, 3000);
     }
 
-    // 1. 校園地標資料集
-    const campusPlaces = [
-      { id: "A", name: "行政大樓", lat: 25.174879496685257, lng: 121.44905729987109, cat: "admin", color: "#059669", desc: "學校最高行政決策與主要處室大樓（校長室、教務處、研發處等）" },
-      { id: "TH", name: "校史館暨張建邦創辦人紀念館", lat: 25.173911215588944, lng: 121.44935892114188, cat: "admin", color: "#0284c7", desc: "淡江校史展覽與張建邦創辦人文物紀念館" },
-      { id: "H", name: "宮燈教室", lat: 25.174323172470597, lng: 121.44875657885967, cat: "academic", color: "#dc2626", desc: "特色中國傳統式瓦舍教室區" },
-      { id: "V", name: "視聽教育館", lat: 25.17499312092134, lng: 121.4494349008392, cat: "academic", color: "#dc2626", desc: "語言教學與視聽教育發展專屬大樓" },
-      { id: "QP", name: "覺軒會館", lat: 25.173725414003933, lng: 121.4480888307921, cat: "life", color: "#d97706", desc: "QP Terrace，景觀花園餐廳與典雅會館" },
-      { id: "RT", name: "網球場", lat: 25.175146690188537, lng: 121.44980790901334, cat: "sport", color: "#16a34a", desc: "校內網球活動場地" },
-      { id: "POST", name: "淡江郵局", lat: 25.17464421134901, lng: 121.45027461328878, cat: "life", color: "#16a34a", desc: "淡江校內郵務與儲匯服務" },
-      { id: "R", name: "學生活動中心", lat: 25.17478743024776, lng: 121.45037385501142, cat: "sport", color: "#ea580c", desc: "室內活動場所與羽球場" },
-      { id: "SQ", name: "書卷廣場", lat: 25.17553993356438, lng: 121.45063402925842, cat: "life", color: "#8b5cf6", desc: "淡江校園核心地標廣場" },
-      { id: "U", name: "覺生紀念圖書館", lat: 25.17475101868242, lng: 121.45105513602745, cat: "admin", color: "#0284c7", desc: "總圖書館（採編組、典藏閱覽組、參考服務組、館長室）" },
-      { id: "I", name: "覺生綜合大樓", lat: 25.174384409394097, lng: 121.45092182016924, cat: "academic", color: "#0284c7", desc: "遠距教學中心 (I101)、品保處/IR中心 (I801)、覺生國際會議廳 (I1001)" },
-      { id: "FL", name: "外國語文大樓", lat: 25.17488210027984, lng: 121.45164253975626, cat: "academic", color: "#dc2626", desc: "外語學院院辦 (FL410)、英文系 (FL207)、日文系 (FL317)、歐語系 (FL413)" },
-      { id: "Z", name: "文錙藝術中心", lat: 25.17504959322785, lng: 121.45222189698671, cat: "life", color: "#9333ea", desc: "藝術文化展示與書法典藏展覽廳" },
-      { id: "MC", name: "文錙音樂廳", lat: 25.17561479953073, lng: 121.4511518404264, cat: "life", color: "#9333ea", desc: "音樂演奏、藝文發表與音樂文化推廣展演空間" },
-      { id: "FD", name: "美食廣場", lat: 25.17500668977156, lng: 121.4521207165776, cat: "life", color: "#d97706", desc: "校內餐飲與學生用餐生活商場" },
-      { id: "Z123", name: "松濤1、2、3館", lat: 25.174980497589033, lng: 121.4524032429072, cat: "life", color: "#e11d48", desc: "學生宿舍區、住宿輔導組（松濤二館二樓大廳 Z200）" },
-      { id: "Z45", name: "松濤4、5館", lat: 25.17531418306515, lng: 121.45250621112069, cat: "life", color: "#e11d48", desc: "學生宿舍區" },
-      { id: "T", name: "驚聲紀念大樓", lat: 25.17549138511537, lng: 121.45133140359606, cat: "academic", color: "#dc2626", desc: "國際處 (T1002)、外交系全英班 (T802)、國觀系 (T806)、國務學院 (T902)、全政經系 (T1102)" },
-      { id: "E", name: "工學大樓", lat: 25.175972014036386, lng: 121.4518329766833, cat: "academic", color: "#dc2626", desc: "工學院 (E682)、資工 (E646)、電機 (E629)、土木 (E729)、航太 (E788)、機械 (E790)" },
-      { id: "G", name: "工學館", lat: 25.176113242602668, lng: 121.4510643094358, cat: "academic", color: "#dc2626", desc: "工程實習工廠、安全辦公室 (G101)、財務處 (G401)" },
-      { id: "K", name: "建築館", lat: 25.176481971793997, lng: 121.45105771091248, cat: "academic", color: "#dc2626", desc: "建築學系系辦公室 (K101) " },
-      { id: "SN", name: "黑天鵝展示廳", lat: 25.176342748545554, lng: 121.45056420144378, cat: "life", color: "#4f46e5", desc: "校園文藝展覽、成果發表與海報特展展廳" },
-      { id: "M", name: "海事博物館", lat: 25.176231747056615, lng: 121.45043018144673, cat: "life", color: "#0891b2", desc: "衛生保健組（健康中心/下層）、出版中心 (M109)" },
-      { id: "ED", name: "教育大樓", lat: 25.17583365135925, lng: 121.45271542347635, cat: "academic", color: "#dc2626", desc: "教育學院院辦 (ED104)、心諮所 (ED103)、教科系 (ED203)、師培中心 (ED304)" },
-      { id: "XC", name: "五虎崗綜合球場", lat: 25.17557149006987, lng: 121.45374270944231, cat: "sport", color: "#16a34a", desc: "排球、籃球戶外綜合球場" },
-      { id: "F", name: "會文館", lat: 25.175714707884946, lng: 121.4495852855837, cat: "academic", color: "#dc2626", desc: "環安中心 (F101)、總務處聯合辦公室 (F103)" },
-      { id: "L", name: "文學館", lat: 25.176230325112066, lng: 121.44938680218506, cat: "academic", color: "#dc2626", desc: "資圖系 (L501)、中文系 (L514)、文學院 (L519)、歷史系 (L523)" },
-      { id: "B", name: "商管大樓", lat: 25.1765822988849, lng: 121.4500734475651, cat: "academic", color: "#dc2626", desc: "總務處出納組 (B304)、學務處（生輔組/諮商中心）、商管學院各系辦公室（B8~B11）" },
-      { id: "BUS27", name: "紅27公車站", lat: 25.17652097531375, lng: 121.44830349036893, cat: "life", color: "#0284c7", desc: "往返淡水捷運站之主要公車發車乘車處" },
-      { id: "SG", name: "紹謨紀念體育館", lat: 25.176139222851223, lng: 121.44858910092164, cat: "sport", color: "#16a34a", desc: "室內羽球/籃球場、課外活動輔導組 (SG315)" },
-      { id: "BUS28", name: "紅28公車站", lat: 25.174715780941035, lng: 121.44867511038852, cat: "life", color: "#0284c7", desc: "往返淡水捷運站之主要公車發車乘車處" },
-      { id: "O", name: "傳播館 O", lat: 25.175713357457894, lng: 121.4487737409017, cat: "academic", color: "#dc2626", desc: "資傳系辦公室 (O304)" },
-      { id: "Q", name: "傳播館 Q", lat: 25.17561383323428, lng: 121.44909694706205, cat: "academic", color: "#dc2626", desc: "大傳系辦公室 (Q406) " },
-      { id: "C", name: "鍾靈化學館", lat: 25.175216949445087, lng: 121.44878854583827, cat: "academic", color: "#dc2626", desc: "化學系辦 (C306)、鍾靈分館 (C301)、科教中心 (C434)、尖端材料學程 (C448)" },
-      { id: "S", name: "騮先紀念科學館", lat: 25.17549126830538, lng: 121.44818655683316, cat: "academic", color: "#dc2626", desc: "理學院院辦 (S220)、物理系 (S303)、應數與數據科學系 (S401)" },
-      { id: "HC", name: "守謙國際會議中心", lat: 25.17475768873364, lng: 121.44790990466156, cat: "admin", color: "#0284c7", desc: "校友總會會館 (HC301)、事務整備組 (HC308)、AI系辦 (HC303)" },
-      { id: "N", name: "紹謨紀念游泳館", lat: 25.174611747711207, lng: 121.44721264698532, cat: "sport", color: "#16a34a", desc: "標準室內溫水游泳池與師生重訓場所" },
-      { id: "BB", name: "籃球場", lat: 25.17380672529315, lng: 121.44683142866, cat: "sport", color: "#16a34a", desc: "戶外籃球運動場" },
-      { id: "TK", name: "操場", lat: 25.173549254309364, lng: 121.44595519570949, cat: "sport", color: "#16a34a", desc: "標準田徑跑道與運動場" },
-      { id: "SS", name: "克難坡", lat: 25.17333791636465, lng: 121.44744532888114, cat: "life", color: "#d97706", desc: "淡江知名 132 階好漢坡，登高精神象徵" },
-      { id: "JSS", name: "驚聲廣場", lat: 25.173818997388533, lng: 121.44742518952371, cat: "life", color: "#8b5cf6", desc: "驚聲紀念廣場" }
-    ];
-
-    // 2. 處室與系所資料庫
-    const campusOffices = [
-      { name: "出納組 (總務處)", group: "總務處", building: "商館大樓", room: "B304", targetId: "B" },
-      { name: "資訊與圖書館學系 辦公室", group: "文學院", building: "文學館", room: "L501", targetId: "L" },
-      { name: "中國文學學系 辦公室", group: "文學院", building: "文學館", room: "L514", targetId: "L" },
-      { name: "文學院 辦公室", group: "文學院", building: "文學館", room: "L519", targetId: "L" },
-      { name: "歷史學系 辦公室", group: "文學院", building: "文學館", room: "L523", targetId: "L" },
-      { name: "建築學系 辦公室", group: "工學院", building: "建築館", room: "K101", targetId: "K" },
-      { name: "資訊傳播學系 辦公室", group: "文學院", building: "傳播館 O", room: "O304", targetId: "O" },
-      { name: "大眾傳播學系 辦公室", group: "文學院", building: "傳播館 Q", room: "Q406", targetId: "Q" },
-      { name: "事務整備組辦公室", group: "總務處", building: "守謙國際會議中心", room: "HC308", targetId: "HC" },
-      { name: "淡江大學校友總會會館", group: "其它單位", building: "守謙國際會議中心", room: "HC301", targetId: "HC" },
-      { name: "文書組", group: "總務處", building: "行政大樓", room: "A102", targetId: "A" },
-      { name: "收發室", group: "總務處", building: "行政大樓", room: "A101", targetId: "A" },
-      { name: "職能福利組", group: "其它單位", building: "行政大樓", room: "A103", targetId: "A" },
-      { name: "資訊處 (全校網路/帳號諮詢)", group: "資訊處", building: "行政大樓", room: "A112", targetId: "A" },
-      { name: "教務長室", group: "教務處", building: "行政大樓", room: "A201", targetId: "A" },
-      { name: "教務處 招生組", group: "教務處", building: "行政大樓", room: "A210", targetId: "A" },
-      { name: "教務處 課務組", group: "教務處", building: "行政大樓", room: "A211", targetId: "A" },
-      { name: "教務處 註冊組", group: "教務處", building: "行政大樓", room: "A212", targetId: "A" },
-      { name: "秘書處", group: "秘書處/校長室", building: "行政大樓", room: "A301", targetId: "A" },
-      { name: "人力資源處 (人事室)", group: "其它單位", building: "行政大樓", room: "A307", targetId: "A" },
-      { name: "校長室", group: "秘書處/校長室", building: "行政大樓", room: "A401", targetId: "A" },
-      { name: "副校長室 (學術/行政/國際)", group: "秘書處/校長室", building: "行政大樓", room: "A402 / A403", targetId: "A" },
-      { name: "環境保護及安全衛生中心(環安中心)", group: "總務處", building: "會文館", room: "F101", targetId: "F" },
-      { name: "總務處聯合辦公室 (總務長室/節能與空間組/資產組)", group: "總務處", building: "會文館", room: "F103", targetId: "F" },
-      { name: "資訊處 校務資訊組", group: "資訊處", building: "驚聲紀念大樓", room: "T107", targetId: "T" },
-      { name: "資訊處 網路管理組", group: "資訊處", building: "驚聲紀念大樓", room: "T109", targetId: "T" },
-      { name: "文錙藝術中心 主任室", group: "其它單位", building: "驚聲紀念大樓", room: "T212", targetId: "T" },
-      { name: "驚聲國際會議廳", group: "其它單位", building: "驚聲紀念大樓", room: "T301", targetId: "T" },
-      { name: "外交與國際關係學系全英語學士班", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T802", targetId: "T" },
-      { name: "國際觀光管理學系全英語學士班", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T806", targetId: "T" },
-      { name: "歐洲聯盟研究中心 / 兩岸關係研究中心", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T811", targetId: "T" },
-      { name: "國際事務學院 院辦公室", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T902", targetId: "T" },
-      { name: "國際事務副校長室", group: "秘書處/校長室", building: "驚聲紀念大樓", room: "T1001", targetId: "T" },
-      { name: "國際暨兩岸事務處 (國際交流組/境外生輔導組)", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T1002", targetId: "T" },
-      { name: "全球政治經濟學系 辦公室", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T1102", targetId: "T" },
-      { name: "全英語教學推動中心", group: "教務處", building: "驚聲紀念大樓", room: "T1103", targetId: "T" },
-      { name: "日本研究中心 / 東協研究中心", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T1106", targetId: "T" },
-      { name: "國際事務與戰略研究所", group: "國際處/國際學院", building: "驚聲紀念大樓", room: "T1202", targetId: "T" },
-      { name: "化學學系 辦公室", group: "理學院", building: "鍾靈化學館", room: "C306", targetId: "C" },
-      { name: "鍾靈分館 (理學分館圖書館)", group: "圖書館", building: "鍾靈化學館", room: "C301", targetId: "C" },
-      { name: "科學教育中心 辦公室", group: "理學院", building: "鍾靈化學館", room: "C434", targetId: "C" },
-      { name: "尖端材料科學學士學位學程", group: "理學院", building: "鍾靈化學館", room: "C448", targetId: "C" },
-      { name: "工學院 院長室 / 技正辦公室", group: "工學院", building: "工學大樓", room: "E682", targetId: "E" },
-      { name: "資訊工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E646", targetId: "E" },
-      { name: "電機工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E629", targetId: "E" },
-      { name: "土木工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E729", targetId: "E" },
-      { name: "航空太空工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E788", targetId: "E" },
-      { name: "機械與機電工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E790", targetId: "E" },
-      { name: "化學工程與材料工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E610", targetId: "E" },
-      { name: "水資源及環境工程學系 辦公室", group: "工學院", building: "工學大樓", room: "E718", targetId: "E" },
-      { name: "AI 創智學院院長室", group: "工學院", building: "工學大樓", room: "E682", targetId: "E" },
-      { name: "人工智慧學系 (AI系)", group: "工學院", building: "守謙國際會議中心", room: "HC303", targetId: "HC" },
-      { name: "安全辦公室", group: "總務處", building: "工學館", room: "G101", targetId: "G" },
-      { name: "財務處", group: "其它單位", building: "工學館", room: "G401", targetId: "G" },
-      { name: "教育心理與諮商研究所", group: "教育學院", building: "教育大樓", room: "ED103", targetId: "ED" },
-      { name: "教育學院 院辦公室", group: "教育學院", building: "教育大樓", room: "ED104 / ED105", targetId: "ED" },
-      { name: "教育與未來設計學系", group: "教育學院", building: "教育大樓", room: "ED106", targetId: "ED" },
-      { name: "教育科技學系 辦公室", group: "教育學院", building: "教育大樓", room: "ED203", targetId: "ED" },
-      { name: "師資培育中心 辦公室", group: "教育學院", building: "教育大樓", room: "ED304", targetId: "ED" },
-      { name: "策略遠見研究中心", group: "教育學院", building: "教育大樓", room: "ED305", targetId: "ED" },
-      { name: "英文學系 辦公室", group: "外語學院", building: "外國語文大樓", room: "FL207", targetId: "FL" },
-      { name: "教學卓越計畫辦公室", group: "教務處", building: "外國語文大樓", room: "FL216", targetId: "FL" },
-      { name: "日本語文學系 辦公室", group: "外語學院", building: "外國語文大樓", room: "FL317", targetId: "FL" },
-      { name: "外國語文學院 院辦公室", group: "外語學院", building: "外國語文大樓", room: "FL410", targetId: "FL" },
-      { name: "歐洲語文學系 (西文組/法文組/德文組/俄文組)", group: "外語學院", building: "外國語文大樓", room: "FL413", targetId: "FL" },
-      { name: "採編組 辦公室", group: "圖書館", building: "覺生紀念圖書館", room: "U101", targetId: "U" },
-      { name: "典藏閱覽組", group: "圖書館", building: "覺生紀念圖書館", room: "U201", targetId: "U" },
-      { name: "數位資訊組 辦公室", group: "圖書館", building: "覺生紀念圖書館", room: "U202", targetId: "U" },
-      { name: "參考服務組 (參考諮詢櫃台)", group: "圖書館", building: "覺生紀念圖書館", room: "U301", targetId: "U" },
-      { name: "多媒體資源室 / 非書資料組", group: "圖書館", building: "覺生紀念圖書館", room: "U501", targetId: "U" },
-      { name: "館長室", group: "圖書館", building: "覺生紀念圖書館", room: "U801", targetId: "U" },
-      { name: "圖書館 秘書辦公室", group: "圖書館", building: "覺生紀念圖書館", room: "U802", targetId: "U" },
-      { name: "遠距教學發展中心 (iClass/數位教材)", group: "教務處", building: "覺生綜合大樓", room: "I101", targetId: "I" },
-      { name: "品質保證稽核處 及 校務研究中心", group: "其它單位", building: "覺生綜合大樓", room: "I801", targetId: "I" },
-      { name: "覺生國際會議廳", group: "其它單位", building: "覺生綜合大樓", room: "I1001", targetId: "I" },
-      { name: "理學院 院辦公室", group: "理學院", building: "騮先紀念科學館", room: "S220", targetId: "S" },
-      { name: "物理學系 辦公室", group: "理學院", building: "騮先紀念科學館", room: "S303", targetId: "S" },
-      { name: "應用數學與數據科學學系", group: "理學院", building: "騮先紀念科學館", room: "S401", targetId: "S" },
-      { name: "出版中心 辦公室", group: "其它單位", building: "海事博物館", room: "M109", targetId: "M" },
-      { name: "生輔組 (就貸/兵役/弱勢助學/校外獎學金)", group: "學務處", building: "商館大樓", room: "B402", targetId: "B" },
-      { name: "生輔組 (學雜費減免/校內獎學金)", group: "學務處", building: "商館大樓", room: "B421", targetId: "B" },
-      { name: "生輔組 (失物招領/校安交通)", group: "學務處", building: "商館大樓", room: "B401", targetId: "B" },
-      { name: "軍訓室", group: "其它單位", building: "商館大樓", room: "B415", targetId: "B" },
-      { name: "學務處 聯合服務櫃台(請假/團保代收)", group: "學務處", building: "商館大樓", room: "B418", targetId: "B" },
-      { name: "課外活動輔導組 (課外組)", group: "學務處", building: "紹謨紀念體育館", room: "SG315", targetId: "SG" },
-      { name: "衛生保健組 (衛保組/健康中心)", group: "學務處", building: "海事博物館下層", room: "M111", targetId: "M" },
-      { name: "住宿輔導組 (住輔組)", group: "學務處", building: "松濤館二館", room: "二樓大廳 (Z200)", targetId: "Z123" },
-      { name: "諮商職涯暨學習發展輔導中心(諮輔中心)", group: "學務處", building: "商館大樓", room: "B408 / B413", targetId: "B" },
-      { name: "原住民族學生資源中心(原資中心)", group: "學務處", building: "商館大樓", room: "B423", targetId: "B" },
-      { name: "商管學院辦公室", group: "商管學院", building: "商館大樓", room: "B1001", targetId: "B" },
-      { name: "國際企業學系 (國企系)", group: "商管學院", building: "商館大樓", room: "B1012", targetId: "B" },
-      { name: "財務金融學系 (金管系/財金系)", group: "商管學院", building: "商館大樓", room: "B1104 / B1102", targetId: "B" },
-      { name: "會計學系 (會計系)", group: "商管學院", building: "商館大樓", room: "B1003", targetId: "B" },
-      { name: "產業經濟學系 (產經系)", group: "商管學院", building: "商館大樓", room: "B1111", targetId: "B" },
-      { name: "經濟學系 (經濟系)", group: "商管學院", building: "商館大樓", room: "B1109", targetId: "B" },
-      { name: "企業管理學系 (企管系)", group: "商管學院", building: "商館大樓", room: "B912", targetId: "B" },
-      { name: "風險管理與保險學系 (保險系)", group: "商管學院", building: "商館大樓", room: "B1107", targetId: "B" },
-      { name: "資訊管理學系 (資管系)", group: "商管學院", building: "商館大樓", room: "B927", targetId: "B" },
-      { name: "公共行政學系 (公行系)", group: "商管學院", building: "商館大樓", room: "B811", targetId: "B" },
-      { name: "管理科學學系 (管科學系)", group: "商管學院", building: "商館大樓", room: "B1014", targetId: "B" },
-      { name: "統計學系 (統計系)", group: "商管學院", building: "商館大樓", room: "B1113", targetId: "B" }
-    ];
-
     // 3. 地圖初始化
     const isMobile = window.innerWidth < 640;
     const campusCenter = [25.1752, 121.4503];
@@ -474,21 +634,19 @@
       maxBoundsViscosity: 0.8
     }).setView(campusCenter, isMobile ? 16 : 17);
 
-    // 國土測繪中心 EMAP8（純圖無字版）
     const emap8 = L.tileLayer('https://wmts.nlsc.gov.tw/wmts/EMAP8/default/GoogleMapsCompatible/{z}/{y}/{x}', {
       maxZoom: 20,
-      attribution: '&copy; <a href="https://maps.nlsc.gov.tw/" target="_blank">國土測繪圖資服務雲</a>'
+      attribution: '&copy; <a href="https://maps.nlsc.gov.tw/" target="_blank">NLSC Taiwan</a>'
     }).addTo(map);
 
-    // 備用 OpenStreetMap
     const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap'
     });
 
     L.control.layers({
-      "國土測繪無字版 (推薦)": emap8,
-      "OpenStreetMap 標準版": osm
+      "EMAP8 (No Labels)": emap8,
+      "OpenStreetMap": osm
     }, null, { position: 'topright' }).addTo(map);
 
     L.control.zoom({ position: 'topright' }).addTo(map);
@@ -536,7 +694,10 @@
     }
 
     function getPopupHtml(place, highlightedOffice = null) {
+      const t = i18n[currentLang];
       const officesInPlace = campusOffices.filter(o => o.targetId === place.id);
+      const pName = getPlaceName(place);
+      const pDesc = getPlaceDesc(place);
       
       let highlightHtml = '';
       if (highlightedOffice) {
@@ -544,9 +705,9 @@
           <div class="mb-2 p-2 bg-amber-50 border border-amber-200 rounded-xl text-xs">
             <div class="font-bold text-amber-900 flex items-center gap-1">
               <i class="fa-solid fa-crosshairs text-amber-600"></i>
-              查詢目標：${highlightedOffice.name}
+              ${t.popupTarget}${getOfficeName(highlightedOffice)}
             </div>
-            <div class="text-slate-700 mt-0.5">位置：<span class="font-bold text-red-600 font-mono">${highlightedOffice.room}</span> (${highlightedOffice.group})</div>
+            <div class="text-slate-700 mt-0.5">${t.popupLocation}<span class="font-bold text-red-600 font-mono">${highlightedOffice.room}</span> (${getGroupName(highlightedOffice.group)})</div>
           </div>
         `;
       }
@@ -557,13 +718,13 @@
           <div class="mt-2 pt-1.5 border-t border-slate-100">
             <details class="group" open>
               <summary class="text-xs font-bold text-slate-500 cursor-pointer flex items-center justify-between py-1 select-none">
-                <span>🏢 進駐處室 / 系所 (${officesInPlace.length})</span>
+                <span>${t.popupOfficesHeader(officesInPlace.length)}</span>
                 <i class="fa-solid fa-chevron-down text-[10px] transition-transform group-open:rotate-180"></i>
               </summary>
               <div class="mt-1 space-y-1 max-h-36 overflow-y-auto custom-scroll pr-1">
                 ${officesInPlace.map(o => `
                   <div class="flex justify-between items-center text-xs py-0.5 px-1 rounded hover:bg-slate-50">
-                    <span class="text-slate-700 truncate pr-1">${o.name}</span>
+                    <span class="text-slate-700 truncate pr-1" title="${getOfficeName(o)}">${getOfficeName(o)}</span>
                     <span class="font-mono text-[11px] font-bold text-red-600 bg-red-50 px-1.5 py-0.2 rounded shrink-0">${o.room}</span>
                   </div>
                 `).join('')}
@@ -580,13 +741,13 @@
             <span class="text-[11px] px-1.5 py-0.2 rounded-full font-extrabold text-white shadow-sm shrink-0" style="background-color:${place.color};">
               ${place.id}
             </span>
-            <h3 class="font-bold text-slate-900 text-sm truncate">${place.name}</h3>
+            <h3 class="font-bold text-slate-900 text-sm truncate" title="${pName}">${pName}</h3>
           </div>
-          <p class="text-[11px] sm:text-xs text-slate-600 mb-1.5 leading-relaxed">${place.desc}</p>
+          <p class="text-[11px] sm:text-xs text-slate-600 mb-1.5 leading-relaxed">${pDesc}</p>
           ${officesListHtml}
-          <button onclick="startNavigation(${place.lat}, ${place.lng}, '${place.name}')" 
+          <button onclick="startNavigation(${place.lat}, ${place.lng}, '${place.id}')" 
                   class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1.5 px-2 rounded-xl font-bold transition flex items-center justify-center gap-1 shadow-sm active:scale-95">
-            <i class="fa-solid fa-person-walking text-xs"></i> 步行前往此處
+            <i class="fa-solid fa-person-walking text-xs"></i> ${t.popupWalkBtn}
           </button>
         </div>
       `;
@@ -597,7 +758,7 @@
         const marker = L.marker([place.lat, place.lng], {
           icon: createCodeBadgeIcon(place)
         });
-        marker.bindPopup(getPopupHtml(place), {
+        marker.bindPopup(() => getPopupHtml(place), {
           autoPanPadding: [20, 80]
         });
         markersLayer.addLayer(marker);
@@ -608,12 +769,15 @@
 
     function populateBuildingSelect() {
       const select = document.getElementById('filter-building');
+      const currentVal = select.value;
+      select.innerHTML = `<option value="all">${i18n[currentLang].bldAll}</option>`;
       campusPlaces.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.id;
-        opt.innerText = `${p.id} - ${p.name}`;
+        opt.innerText = `${p.id} - ${getPlaceName(p)}`;
         select.appendChild(opt);
       });
+      select.value = currentVal || 'all';
     }
     populateBuildingSelect();
 
@@ -642,6 +806,7 @@
     }
 
     function applyFilters() {
+      const t = i18n[currentLang];
       const kw = keywordInput.value.trim().toLowerCase();
       const dataType = dataTypeSelect.value;
       const placeCat = placeCatSelect.value;
@@ -662,30 +827,35 @@
 
       if (activeFilterCount > 0) {
         activeIndicator.classList.remove('hidden');
-        activeIndicator.innerText = `● 已選 ${activeFilterCount} 項`;
+        activeIndicator.innerText = t.activeFilters(activeFilterCount);
       } else {
         activeIndicator.classList.add('hidden');
       }
 
       let matchedOffices = campusOffices.filter(o => {
-  if (dataType === 'place') return false;
-  if (group !== 'all' && o.group !== group) return false;
-  if (buildingId !== 'all' && o.targetId !== buildingId) return false;
-  if (kw) {
-    // 提取處室名稱括弧內的文字 (例如從 "生輔組 (失物招領/校安交通)" 抓出 "失物招領/校安交通")
-    const bracketMatch = o.name.match(/\((.*?)\)/);
-    const bracketText = bracketMatch ? bracketMatch[1].toLowerCase() : '';
+        if (dataType === 'place') return false;
+        if (group !== 'all' && o.group !== group) return false;
+        if (buildingId !== 'all' && o.targetId !== buildingId) return false;
+        if (kw) {
+          const bracketMatch = o.name.match(/\((.*?)\)/);
+          const bracketText = bracketMatch ? bracketMatch[1].toLowerCase() : '';
+          const bracketEnMatch = (o.nameEn || '').match(/\((.*?)\)/);
+          const bracketEnText = bracketEnMatch ? bracketEnMatch[1].toLowerCase() : '';
 
-    const matchKw = o.name.toLowerCase().includes(kw) || 
-                    bracketText.includes(kw) ||
-                    o.room.toLowerCase().includes(kw) || 
-                    o.group.toLowerCase().includes(kw) || 
-                    o.building.toLowerCase().includes(kw) ||
-                    (kw.includes('健康中心') && o.name.includes('衛生保健'));
-    if (!matchKw) return false;
-  }
-  return true;
-});
+          const matchKw = o.name.toLowerCase().includes(kw) || 
+                          (o.nameEn || '').toLowerCase().includes(kw) ||
+                          bracketText.includes(kw) ||
+                          bracketEnText.includes(kw) ||
+                          o.room.toLowerCase().includes(kw) || 
+                          o.group.toLowerCase().includes(kw) || 
+                          (groupTranslations[o.group] || '').toLowerCase().includes(kw) ||
+                          o.building.toLowerCase().includes(kw) ||
+                          (o.buildingEn || '').toLowerCase().includes(kw) ||
+                          (kw.includes('健康中心') && o.name.includes('衛生保健'));
+          if (!matchKw) return false;
+        }
+        return true;
+      });
 
       let matchedPlaces = campusPlaces.filter(p => {
         if (dataType === 'office') return false;
@@ -693,8 +863,10 @@
         if (buildingId !== 'all' && p.id !== buildingId) return false;
         if (kw) {
           const matchKw = p.name.toLowerCase().includes(kw) || 
+                          (p.nameEn || '').toLowerCase().includes(kw) ||
                           p.id.toLowerCase().includes(kw) || 
-                          p.desc.toLowerCase().includes(kw);
+                          p.desc.toLowerCase().includes(kw) ||
+                          (p.descEn || '').toLowerCase().includes(kw);
           if (!matchKw) return false;
         }
         return true;
@@ -716,6 +888,7 @@
     }
 
     function renderResultsList(offices, places) {
+      const t = i18n[currentLang];
       const isFiltered = keywordInput.value.trim() !== '' || 
                          dataTypeSelect.value !== 'all' || 
                          placeCatSelect.value !== 'all' || 
@@ -724,37 +897,37 @@
 
       if (!isFiltered) {
         resultsContainer.classList.add('hidden');
-        filterStats.innerText = "顯示全部項目";
+        filterStats.innerText = t.showAll;
         return;
       }
 
       resultsContainer.classList.remove('hidden');
       resultsContainer.innerHTML = '';
       const totalCount = offices.length + places.length;
-      filterStats.innerText = `符合：${totalCount} 項`;
+      filterStats.innerText = t.matchedCount(totalCount);
 
       if (totalCount === 0) {
-        resultsContainer.innerHTML = `<div class="p-3 text-center text-xs text-slate-400">找不到相符的項目，請嘗試放寬條件</div>`;
+        resultsContainer.innerHTML = `<div class="p-3 text-center text-xs text-slate-400">${t.noResults}</div>`;
         return;
       }
 
       if (offices.length > 0) {
         const title = document.createElement('div');
         title.className = "text-[11px] font-bold text-slate-400 px-2 pt-1";
-        title.innerText = `行政處室 / 學術系所 (${offices.length})`;
+        title.innerText = t.resOfficesTitle(offices.length);
         resultsContainer.appendChild(title);
 
         offices.forEach(office => {
           const item = document.createElement('div');
           item.className = "p-2 hover:bg-blue-50 rounded-xl cursor-pointer flex flex-col transition border border-transparent hover:border-blue-100";
           item.innerHTML = `
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-slate-800 text-xs">${office.name}</span>
-              <span class="text-xs font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-mono">${office.room}</span>
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-bold text-slate-800 text-xs">${getOfficeName(office)}</span>
+              <span class="text-xs font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-mono shrink-0">${office.room}</span>
             </div>
-            <div class="text-[11px] text-slate-500 mt-0.5 flex items-center justify-between">
-              <span><i class="fa-solid fa-location-dot text-slate-400 text-[10px]"></i> 位於：${office.building}</span>
-              <span class="bg-slate-100 text-slate-600 px-1.5 rounded text-[10px]">${office.group}</span>
+            <div class="text-[11px] text-slate-500 mt-0.5 flex items-center justify-between gap-2">
+              <span class="truncate"><i class="fa-solid fa-location-dot text-slate-400 text-[10px]"></i> ${t.locatedAt}${getOfficeBuilding(office)}</span>
+              <span class="bg-slate-100 text-slate-600 px-1.5 rounded text-[10px] shrink-0">${getGroupName(office.group)}</span>
             </div>
           `;
           item.onclick = () => {
@@ -774,18 +947,18 @@
       if (places.length > 0) {
         const title = document.createElement('div');
         title.className = "text-[11px] font-bold text-slate-400 px-2 pt-2";
-        title.innerText = `校園建築與景點 (${places.length})`;
+        title.innerText = t.resPlacesTitle(places.length);
         resultsContainer.appendChild(title);
 
         places.forEach(place => {
           const item = document.createElement('div');
-          item.className = "p-2 hover:bg-slate-100 rounded-xl cursor-pointer flex items-center justify-between transition";
+          item.className = "p-2 hover:bg-slate-100 rounded-xl cursor-pointer flex items-center justify-between transition gap-2";
           item.innerHTML = `
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 min-w-0">
               <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0" style="background-color:${place.color};">${place.id}</span>
-              <span class="font-bold text-slate-800 text-xs">${place.name}</span>
+              <span class="font-bold text-slate-800 text-xs truncate">${getPlaceName(place)}</span>
             </div>
-            <span class="text-[10px] text-slate-400 font-mono">前往地號</span>
+            <span class="text-[10px] text-slate-400 font-mono shrink-0">${t.goToPlace}</span>
           `;
           item.onclick = () => {
             const marker = markersById[place.id];
@@ -816,7 +989,7 @@
       groupSelect.value = 'all';
       buildingSelect.value = 'all';
       applyFilters();
-      showToast("已重設所有搜尋與篩選條件", "fa-rotate-left", "text-blue-400");
+      showToast(i18n[currentLang].toastReset, "fa-rotate-left", "text-blue-400");
     }
 
     map.on('dragstart', () => {
@@ -826,6 +999,94 @@
       }
     });
 
+    // ======================== 語言切換核心控制 ========================
+    function updateGpsBadgeUI() {
+      const statusBadge = document.getElementById('gps-status-badge');
+      const t = i18n[currentLang];
+      if (gpsState === 'connected') {
+        statusBadge.className = "text-[10px] sm:text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0";
+        statusBadge.innerHTML = `<i class="fa-solid fa-location-dot"></i> ${t.gpsConnected}`;
+      } else if (gpsState === 'manual') {
+        statusBadge.className = "text-[10px] sm:text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0";
+        statusBadge.innerHTML = `<i class="fa-solid fa-location-crosshairs"></i> ${t.gpsManual}`;
+      } else if (gpsState === 'unsupported') {
+        statusBadge.className = "text-[10px] sm:text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-bold shrink-0";
+        statusBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${t.gpsUnsupported}`;
+      } else {
+        statusBadge.className = "text-[10px] sm:text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0";
+        statusBadge.innerHTML = `<i class="fa-solid fa-satellite-dish text-[9px] animate-pulse"></i> ${t.gpsLocating}`;
+      }
+    }
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'zh' ? 'en' : 'zh';
+      document.documentElement.lang = currentLang === 'zh' ? 'zh-Hant' : 'en';
+      document.getElementById('lang-btn-text').innerText = currentLang === 'zh' ? 'EN' : '繁中';
+
+      const t = i18n[currentLang];
+      document.title = t.pageTitle;
+      document.getElementById('ui-app-title').innerText = t.appTitle;
+      document.getElementById('ui-app-subtitle').innerText = t.appSubtitle;
+      keywordInput.placeholder = t.searchPlaceholder;
+      document.getElementById('ui-adv-filter-btn').innerText = t.advFilter;
+      document.getElementById('ui-label-datatype').innerText = t.labelDataType;
+      document.getElementById('ui-label-placecat').innerText = t.labelPlaceCat;
+      document.getElementById('ui-label-group').innerText = t.labelGroup;
+      document.getElementById('ui-label-building').innerText = t.labelBuilding;
+      document.getElementById('ui-reset-btn').innerText = t.resetBtn;
+      document.getElementById('ui-nav-title').innerText = t.navTitle;
+      document.getElementById('ui-nav-end-btn').innerText = t.navEndBtn;
+      document.getElementById('locate-btn').title = t.locateBtnTitle;
+
+      // 更新資料類型下拉選單
+      dataTypeSelect.options[0].text = t.dtAll;
+      dataTypeSelect.options[1].text = t.dtOffice;
+      dataTypeSelect.options[2].text = t.dtPlace;
+
+      // 更新景點類別下拉選單
+      placeCatSelect.options[0].text = t.catAll;
+      placeCatSelect.options[1].text = t.catAcademic;
+      placeCatSelect.options[2].text = t.catAdmin;
+      placeCatSelect.options[3].text = t.catSport;
+      placeCatSelect.options[4].text = t.catLife;
+
+      // 更新單位群組下拉選單
+      groupSelect.options[0].text = t.grpAll;
+      for (let i = 1; i < groupSelect.options.length; i++) {
+        const val = groupSelect.options[i].value;
+        groupSelect.options[i].text = getGroupName(val);
+      }
+
+      // 更新建築物下拉選單
+      populateBuildingSelect();
+
+      // 更新 GPS 狀態與個人定位提示
+      updateGpsBadgeUI();
+      if (userMarker) {
+        userMarker.setTooltipContent(t.myLocationTooltip);
+      }
+
+      // 重新渲染已開啟的彈出視窗
+      campusPlaces.forEach(place => {
+        const marker = markersById[place.id];
+        if (marker && marker.isPopupOpen()) {
+          marker.setPopupContent(getPopupHtml(place));
+        }
+      });
+
+      // 更新導航浮動卡目的地名稱（若正在導航）
+      if (activeDestPlaceId) {
+        const destPlace = campusPlaces.find(p => p.id === activeDestPlaceId);
+        if (destPlace) {
+          document.getElementById('nav-target-name').innerText = t.navDest(getPlaceName(destPlace));
+        }
+      }
+
+      // 重新執行篩選與結果列表渲染
+      applyFilters();
+      showToast(t.toastLangSwitched);
+    }
+
     // 6. 純 GPS 即時定位追蹤
     let userMarker = null;
     let userAccuracyCircle = null;
@@ -834,12 +1095,12 @@
     let watchId = null;
 
     function startAutoLocationTracking() {
-      const statusBadge = document.getElementById('gps-status-badge');
+      const t = i18n[currentLang];
 
       if (!navigator.geolocation) {
-        statusBadge.className = "text-[10px] sm:text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-bold";
-        statusBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> 不支援 GPS';
-        showToast("裝置不支援定位功能，已預設顯示淡江校園", "fa-triangle-exclamation", "text-amber-400");
+        gpsState = 'unsupported';
+        updateGpsBadgeUI();
+        showToast(t.toastUnsupported, "fa-triangle-exclamation", "text-amber-400");
         return;
       }
 
@@ -859,7 +1120,7 @@
             });
 
             userMarker = L.marker(userLatLng, { icon: userCustomIcon, zIndexOffset: 1000 }).addTo(map);
-            userMarker.bindTooltip("我的目前位置", { permanent: false, direction: 'top' });
+            userMarker.bindTooltip(i18n[currentLang].myLocationTooltip, { permanent: false, direction: 'top' });
 
             userAccuracyCircle = L.circle(userLatLng, {
               radius: accuracy,
@@ -879,24 +1140,23 @@
           if (!hasCenteredFirstTime) {
             hasCenteredFirstTime = true;
             map.flyTo(userLatLng, 18, { duration: 1.2 });
-            showToast("已自動為您定位並置中", "fa-circle-check", "text-emerald-400");
+            showToast(i18n[currentLang].toastAutoCentered, "fa-circle-check", "text-emerald-400");
           }
 
-          statusBadge.className = "text-[10px] sm:text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1";
-          statusBadge.innerHTML = '<i class="fa-solid fa-location-dot"></i> GPS 已連線';
+          gpsState = 'connected';
+          updateGpsBadgeUI();
 
-          // 若正在導航中，自動更新走過的路段為灰色
           if (typeof updateProgressPolyline === 'function') {
             updateProgressPolyline();
           }
         },
         (err) => {
-          statusBadge.className = "text-[10px] sm:text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-1";
-          statusBadge.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> 點擊手動定位';
+          gpsState = 'manual';
+          updateGpsBadgeUI();
           
           if (!hasCenteredFirstTime) {
             hasCenteredFirstTime = true;
-            showToast("若需即時定位，請允許瀏覽器位置存取權限", "fa-location-arrow", "text-blue-400");
+            showToast(i18n[currentLang].toastNeedPerm, "fa-location-arrow", "text-blue-400");
           }
         },
         {
@@ -913,7 +1173,7 @@
 
       if (userLatLng) {
         map.flyTo(userLatLng, 18, { duration: 1 });
-        showToast("已置中至目前位置", "fa-crosshairs", "text-blue-400");
+        showToast(i18n[currentLang].toastRecentered, "fa-crosshairs", "text-blue-400");
         setTimeout(() => {
           btn.innerHTML = '<i class="fa-solid fa-location-crosshairs text-base"></i>';
         }, 600);
@@ -933,11 +1193,11 @@
               userMarker.setLatLng(userLatLng);
             }
             map.flyTo(userLatLng, 18, { duration: 1.2 });
-            showToast("已成功定位", "fa-circle-check", "text-emerald-400");
+            showToast(i18n[currentLang].toastLocated, "fa-circle-check", "text-emerald-400");
             btn.innerHTML = '<i class="fa-solid fa-location-crosshairs text-base"></i>';
           },
           (err) => {
-            showToast("無法取得定位，請檢查手機 GPS 是否已開啟", "fa-triangle-exclamation", "text-red-400");
+            showToast(i18n[currentLang].toastGpsError, "fa-triangle-exclamation", "text-red-400");
             btn.innerHTML = '<i class="fa-solid fa-location-crosshairs text-base"></i>';
           },
           { enableHighAccuracy: true, timeout: 8000 }
@@ -950,16 +1210,20 @@
     let fullRouteCoords = [];
     let passedPolyline = null;
     let remainingPolyline = null;
+    let activeDestPlaceId = null;
 
-    function startNavigation(destLat, destLng, destName) {
+    function startNavigation(destLat, destLng, placeId) {
       map.closePopup();
 
       if (!userLatLng) {
-        showToast("正在確認起點座標...", "fa-location-arrow", "text-blue-400");
+        showToast(i18n[currentLang].toastFindingOrigin, "fa-location-arrow", "text-blue-400");
         recenterUser();
         return;
       }
 
+      activeDestPlaceId = placeId;
+      const destPlace = campusPlaces.find(p => p.id === placeId);
+      const destName = destPlace ? getPlaceName(destPlace) : placeId;
       runRouting(destLat, destLng, destName);
     }
 
@@ -1037,12 +1301,13 @@
 
     function runRouting(destLat, destLng, destName) {
       cancelNavigationLayers();
+      const t = i18n[currentLang];
 
       const navBanner = document.getElementById('nav-banner');
       navBanner.classList.remove('hidden');
       navBanner.classList.add('flex');
-      document.getElementById('nav-target-name').innerText = `目的地：${destName}`;
-      document.getElementById('nav-distance').innerText = "規劃中...";
+      document.getElementById('nav-target-name').innerText = t.navDest(destName);
+      document.getElementById('nav-distance').innerText = t.navPlanning;
       document.getElementById('nav-time').innerText = "";
       
       const gmapsBtn = document.getElementById('nav-gmaps-btn');
@@ -1070,17 +1335,18 @@
       }).addTo(map);
 
       routingControl.on('routesfound', function(e) {
+        const curT = i18n[currentLang];
         const routes = e.routes;
         const summary = routes[0].summary;
         const meters = Math.round(summary.totalDistance);
         const minutes = Math.max(1, Math.round(summary.totalTime / 60));
 
-        document.getElementById('nav-distance').innerText = `${meters} 公尺`;
-        document.getElementById('nav-time').innerText = `(步行約 ${minutes} 分鐘)`;
+        document.getElementById('nav-distance').innerText = curT.navMeters(meters);
+        document.getElementById('nav-time').innerText = curT.navTime(minutes);
         
         if (routes[0].instructions && routes[0].instructions.length > 0) {
           const firstStep = routes[0].instructions[0].text;
-          document.getElementById('nav-step').innerText = firstStep || "沿著步道前進";
+          document.getElementById('nav-step').innerText = firstStep || curT.navDefaultStep;
         }
 
         fullRouteCoords = routes[0].coordinates.map(c => L.latLng(c.lat, c.lng));
@@ -1088,11 +1354,12 @@
       });
 
       routingControl.on('routingerror', function() {
+        const curT = i18n[currentLang];
         const directDist = Math.round(map.distance(userLatLng, [destLat, destLng]));
         const directMin = Math.max(1, Math.round(directDist / 70));
-        document.getElementById('nav-distance').innerText = `約 ${directDist} 公尺 (直線)`;
-        document.getElementById('nav-time').innerText = `(步程約 ${directMin} 分鐘)`;
-        document.getElementById('nav-step').innerText = "請參考 Google Maps 路線";
+        document.getElementById('nav-distance').innerText = curT.navApproxMeters(directDist);
+        document.getElementById('nav-time').innerText = curT.navTime(directMin);
+        document.getElementById('nav-step').innerText = curT.navFallbackStep;
 
         fullRouteCoords = [
           L.latLng(userLatLng[0], userLatLng[1]),
@@ -1120,6 +1387,7 @@
 
     function cancelNavigation() {
       cancelNavigationLayers();
+      activeDestPlaceId = null;
       const navBanner = document.getElementById('nav-banner');
       navBanner.classList.add('hidden');
       navBanner.classList.remove('flex');
