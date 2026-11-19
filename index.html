@@ -55,7 +55,6 @@
       max-width: 82vw !important;
     }
 
-
     /* 精緻建築代號圓形標籤 (Building Code Badge) */
     .code-badge-marker {
       display: flex;
@@ -114,7 +113,7 @@
 <body class="bg-slate-100 font-sans select-none">
 
   <!-- ======================== 右上角語言切換按鈕 ======================== -->
-<div class="fixed top-2.5 sm:top-2.5 right-14 sm:right-16 z-30">
+  <div class="fixed top-2.5 sm:top-2.5 right-14 sm:right-16 z-30">
     <button 
       id="lang-toggle-btn" 
       onclick="toggleLanguage()" 
@@ -690,89 +689,119 @@
     }
 
     function getPopupHtml(place, highlightedOffice = null) {
-  const t = i18n[currentLang];
-  const officesInPlace = campusOffices.filter(o => o.targetId === place.id);
-  const pName = getPlaceName(place);
-  const pDesc = getPlaceDesc(place);
-  
-  let highlightHtml = '';
-  if (highlightedOffice) {
-    highlightHtml = `
-      <div class="mb-2 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs transition-all">
-        <div class="font-bold text-amber-900 flex items-start gap-1.5 leading-snug">
-          <i class="fa-solid fa-crosshairs text-amber-600 mt-0.5 shrink-0"></i>
-          <span class="break-words">${t.popupTarget}${getOfficeName(highlightedOffice)}</span>
-        </div>
-        <div class="text-slate-700 mt-1 flex items-center justify-between gap-2">
-          <span>${t.popupLocation}<span class="font-bold text-red-600 font-mono bg-white px-1.5 py-0.5 rounded border border-amber-200/80">${highlightedOffice.room}</span></span>
-          <span class="text-[10px] text-amber-800/80 truncate">${getGroupName(highlightedOffice.group)}</span>
-        </div>
-      </div>
-    `;
-  }
+      const t = i18n[currentLang];
+      const officesInPlace = campusOffices.filter(o => o.targetId === place.id);
+      const pName = getPlaceName(place);
+      const pDesc = getPlaceDesc(place);
+      
+      // 資訊卡改放在「進駐處室」下方，避免在螢幕頂端被切掉
+      const hasHighlight = Boolean(highlightedOffice);
+      const highlightTitle = hasHighlight ? `${t.popupTarget}${getOfficeName(highlightedOffice)}` : '';
+      const highlightRoom = hasHighlight ? highlightedOffice.room : '';
+      const highlightGroup = hasHighlight ? getGroupName(highlightedOffice.group) : '';
 
-  let officesListHtml = '';
-  if (officesInPlace.length > 0) {
-    officesListHtml = `
-      <div class="mt-2 pt-1.5 border-t border-slate-100">
-        <details class="group" open>
-          <summary class="text-xs font-bold text-slate-500 cursor-pointer flex items-center justify-between py-1 select-none">
-            <span>${t.popupOfficesHeader(officesInPlace.length)}</span>
-            <i class="fa-solid fa-chevron-down text-[10px] transition-transform group-open:rotate-180"></i>
-          </summary>
-          <div class="mt-1 space-y-1 max-h-36 overflow-y-auto custom-scroll pr-1">
-            ${officesInPlace.map((o) => {
-              const globalIdx = campusOffices.indexOf(o);
-              const isSelected = highlightedOffice && highlightedOffice.name === o.name && highlightedOffice.room === o.room;
-              return `
-                <div onclick="selectPopupOffice('${place.id}', ${globalIdx})" 
-                     class="flex justify-between items-center text-xs py-1 px-1.5 rounded-lg cursor-pointer transition active:scale-[0.98] ${isSelected ? 'bg-amber-100/80 font-bold ring-1 ring-amber-300' : 'hover:bg-slate-100'}">
-                  <span class="text-slate-700 truncate pr-1.5">${getOfficeName(o)}</span>
-                  <span class="font-mono text-[11px] font-bold text-red-600 bg-red-50 px-1.5 py-0.2 rounded shrink-0">${o.room}</span>
-                </div>
-              `;
-            }).join('')}
+      let officesListHtml = '';
+      if (officesInPlace.length > 0) {
+        officesListHtml = `
+          <div class="mt-2 pt-1.5 border-t border-slate-100">
+            <!-- 動態顯示的辦公室完整資訊卡（原地更新，不重繪整張彈窗） -->
+            <div id="popup-office-detail-${place.id}" class="${hasHighlight ? '' : 'hidden'} mb-2 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs transition-all">
+              <div class="font-bold text-amber-900 flex items-start gap-1.5 leading-snug">
+                <i class="fa-solid fa-crosshairs text-amber-600 mt-0.5 shrink-0"></i>
+                <span id="popup-office-name-${place.id}" class="break-words">${highlightTitle}</span>
+              </div>
+              <div class="text-slate-700 mt-1 flex items-center justify-between gap-2">
+                <span>${t.popupLocation}<span id="popup-office-room-${place.id}" class="font-bold text-red-600 font-mono bg-white px-1.5 py-0.5 rounded border border-amber-200/80">${highlightRoom}</span></span>
+                <span id="popup-office-group-${place.id}" class="text-[10px] text-amber-800/80 truncate">${highlightGroup}</span>
+              </div>
+            </div>
+
+            <details class="group" open>
+              <summary class="text-xs font-bold text-slate-500 cursor-pointer flex items-center justify-between py-1 select-none">
+                <span>${t.popupOfficesHeader(officesInPlace.length)}</span>
+                <i class="fa-solid fa-chevron-down text-[10px] transition-transform group-open:rotate-180"></i>
+              </summary>
+              <div id="popup-office-list-${place.id}" class="mt-1 space-y-1 max-h-32 overflow-y-auto custom-scroll pr-1">
+                ${officesInPlace.map((o) => {
+                  const globalIdx = campusOffices.indexOf(o);
+                  const isSelected = highlightedOffice && highlightedOffice.name === o.name && highlightedOffice.room === o.room;
+                  return `
+                    <div onclick="selectPopupOffice(event, '${place.id}', ${globalIdx}, this)" 
+                         ondblclick="event.stopPropagation()"
+                         class="popup-office-item flex justify-between items-center text-xs py-1 px-1.5 rounded-lg cursor-pointer transition ${isSelected ? 'bg-amber-100/80 font-bold ring-1 ring-amber-300' : 'hover:bg-slate-100'}">
+                      <span class="text-slate-700 truncate pr-1.5">${getOfficeName(o)}</span>
+                      <span class="font-mono text-[11px] font-bold text-red-600 bg-red-50 px-1.5 py-0.2 rounded shrink-0">${o.room}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </details>
           </div>
-        </details>
-      </div>
-    `;
-  }
+        `;
+      }
 
-  return `
-    <div class="min-w-[220px] max-w-[270px]">
-      ${highlightHtml}
-      <div class="flex items-center gap-1.5 mb-1">
-        <span class="text-[11px] px-1.5 py-0.2 rounded-full font-extrabold text-white shadow-sm shrink-0" style="background-color:${place.color};">
-          ${place.id}
-        </span>
-        <h3 class="font-bold text-slate-900 text-sm truncate" title="${pName}">${pName}</h3>
-      </div>
-      <p class="text-[11px] sm:text-xs text-slate-600 mb-1.5 leading-relaxed">${pDesc}</p>
-      ${officesListHtml}
-      <button onclick="startNavigation(${place.lat}, ${place.lng}, '${place.id}')" 
-              class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1.5 px-2 rounded-xl font-bold transition flex items-center justify-center gap-1 shadow-sm active:scale-95">
-        <i class="fa-solid fa-person-walking text-xs"></i> ${t.popupWalkBtn}
-      </button>
-    </div>
-  `;
-}
+      return `
+        <div class="min-w-[220px] max-w-[270px]" onclick="event.stopPropagation()" ondblclick="event.stopPropagation()">
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="text-[11px] px-1.5 py-0.2 rounded-full font-extrabold text-white shadow-sm shrink-0" style="background-color:${place.color};">
+              ${place.id}
+            </span>
+            <h3 class="font-bold text-slate-900 text-sm truncate" title="${pName}">${pName}</h3>
+          </div>
+          <p class="text-[11px] sm:text-xs text-slate-600 mb-1.5 leading-relaxed">${pDesc}</p>
+          ${officesListHtml}
+          <button onclick="startNavigation(${place.lat}, ${place.lng}, '${place.id}')" 
+                  class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1.5 px-2 rounded-xl font-bold transition flex items-center justify-center gap-1 shadow-sm active:scale-95">
+            <i class="fa-solid fa-person-walking text-xs"></i> ${t.popupWalkBtn}
+          </button>
+        </div>
+      `;
+    }
 
-// 點擊彈窗內的辦公室項目時，更新彈窗頂部的完整資訊卡
-function selectPopupOffice(placeId, officeIndex) {
-  const place = campusPlaces.find(p => p.id === placeId);
-  const office = campusOffices[officeIndex];
-  const marker = markersById[placeId];
-  if (place && office && marker) {
-    marker.setPopupContent(getPopupHtml(place, office));
-  }
-}
+    // 原地更新詳情卡片，不重繪整個彈窗，避免閃退與誤觸地圖縮放
+    function selectPopupOffice(e, placeId, officeIndex, el) {
+      if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+      const t = i18n[currentLang];
+      const office = campusOffices[officeIndex];
+      if (!office) return;
+
+      const detailBox = document.getElementById(`popup-office-detail-${placeId}`);
+      const nameEl = document.getElementById(`popup-office-name-${placeId}`);
+      const roomEl = document.getElementById(`popup-office-room-${placeId}`);
+      const groupEl = document.getElementById(`popup-office-group-${placeId}`);
+
+      if (detailBox && nameEl && roomEl && groupEl) {
+        nameEl.innerText = `${t.popupTarget}${getOfficeName(office)}`;
+        roomEl.innerText = office.room;
+        groupEl.innerText = getGroupName(office.group);
+        detailBox.classList.remove('hidden');
+      }
+
+      // 切換列表項目的選取高亮樣式
+      const listContainer = document.getElementById(`popup-office-list-${placeId}`);
+      if (listContainer) {
+        listContainer.querySelectorAll('.popup-office-item').forEach(item => {
+          item.classList.remove('bg-amber-100/80', 'font-bold', 'ring-1', 'ring-amber-300');
+          item.classList.add('hover:bg-slate-100');
+        });
+      }
+      if (el) {
+        el.classList.remove('hover:bg-slate-100');
+        el.classList.add('bg-amber-100/80', 'font-bold', 'ring-1', 'ring-amber-300');
+      }
+    }
+
     function initMarkers() {
       campusPlaces.forEach(place => {
         const marker = L.marker([place.lat, place.lng], {
           icon: createCodeBadgeIcon(place)
         });
         marker.bindPopup(() => getPopupHtml(place), {
-          autoPanPadding: [20, 80]
+          autoPanPaddingTopLeft: [20, 120],
+          autoPanPaddingBottomRight: [20, 40]
         });
         markersLayer.addLayer(marker);
         markersById[place.id] = marker;
