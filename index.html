@@ -112,30 +112,30 @@
 </head>
 <body class="bg-slate-100 font-sans select-none">
 
-  <!-- ======================== 右上角語言切換按鈕 ======================== -->
-  <div class="fixed top-2.5 sm:top-2.5 right-14 sm:right-16 z-30">
-    <button 
-      id="lang-toggle-btn" 
-      onclick="toggleLanguage()" 
-      class="bg-white/95 hover:bg-slate-50 backdrop-blur-md text-slate-700 border border-slate-200/90 px-3 py-1.5 sm:py-2 rounded-xl shadow-lg text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
-      title="Switch Language / 切換語言"
-    >
-      <i class="fa-solid fa-globe text-blue-600 text-sm"></i>
-      <span id="lang-btn-text">EN</span>
-    </button>
-  </div>
-
   <!-- ======================== 左側/頂部多重篩選控制介面 ======================== -->
-  <div class="fixed top-12 sm:top-4 left-2 sm:left-4 right-2 sm:right-auto z-20 flex flex-col gap-1.5 sm:w-88 max-w-full">
+  <div class="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-auto z-20 flex flex-col gap-1.5 sm:w-88 max-w-full">
     <!-- 主卡片 -->
     <div class="bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-2xl shadow-xl border border-slate-200/90 transition-all max-h-[82vh] overflow-y-auto custom-scroll">
       
-      <!-- 標題與標籤 -->
-      <div class="flex items-center justify-between mb-1">
-        <h1 class="text-sm sm:text-base font-black text-slate-800 flex items-center gap-1.5">
-          <img src="favicon.png" alt="Logo" class="w-6 h-6 rounded-full shrink-0 animate-pulse border border-slate-200" />
-          <span id="ui-app-title">淡江不麋鹿</span>
-        </h1>
+      <!-- 標題、中英切換鈕與 GPS 標籤 -->
+      <div class="flex items-center justify-between gap-1.5 mb-1">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <h1 class="text-sm sm:text-base font-black text-slate-800 flex items-center gap-1.5 truncate">
+            <img src="favicon.png" alt="Logo" class="w-6 h-6 rounded-full shrink-0 animate-pulse border border-slate-200" />
+            <span id="ui-app-title" class="truncate">淡江不麋鹿</span>
+          </h1>
+          <!-- 中英轉換鍵（緊鄰在「淡江不麋鹿」字樣右側） -->
+          <button 
+            id="lang-toggle-btn" 
+            onclick="toggleLanguage()" 
+            class="bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200/90 px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-extrabold flex items-center gap-1 transition-all active:scale-95 shrink-0"
+            title="Switch Language / 切換語言"
+          >
+            <i class="fa-solid fa-globe text-blue-600 text-[10px] sm:text-xs"></i>
+            <span id="lang-btn-text">EN</span>
+          </button>
+        </div>
+
         <span id="gps-status-badge" class="text-[10px] sm:text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0">
           <i class="fa-solid fa-satellite-dish text-[9px] animate-pulse"></i>
           <span id="gps-status-text">自動定位中</span>
@@ -240,7 +240,7 @@
   </div>
 
   <!-- 導航資訊浮動卡 -->
-  <div id="nav-banner" class="fixed bottom-4 sm:bottom-auto sm:top-16 left-3 right-3 sm:left-auto sm:right-4 z-20 bg-white/95 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl shadow-2xl border border-blue-200 sm:max-w-xs hidden flex-col gap-2 transition-all">
+  <div id="nav-banner" class="fixed bottom-4 sm:bottom-auto sm:top-4 left-3 right-3 sm:left-auto sm:right-4 z-20 bg-white/95 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl shadow-2xl border border-blue-200 sm:max-w-xs hidden flex-col gap-2 transition-all">
     <div class="flex items-center justify-between">
       <span class="text-xs font-bold text-blue-600 flex items-center gap-1">
         <i class="fa-solid fa-person-walking text-sm"></i> <span id="ui-nav-title">校內步行路徑導引</span>
